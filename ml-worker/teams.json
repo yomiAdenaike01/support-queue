@@ -1,0 +1,211 @@
+{
+    "billing-team": {
+        "teamId": 0,
+        "name": "Billing Team",
+        "email": "billing@support.acme.com",
+        "slack": "#billing-support",
+        "phone": "+44 20 7946 0100",
+        "hours": "Mon-Fri 9am-6pm GMT",
+        "seniors": [
+            {
+                "name": "Sarah Mitchell",
+                "email": "s.mitchell@acme.com",
+                "phone": "+44 20 7946 0101",
+                "slack_id": "U04AB1CD2EF",
+                "teams_id": "sarah.mitchell@acme.com"
+            },
+            {
+                "name": "Connor Hayes",
+                "email": "c.hayes@acme.com",
+                "phone": "+44 20 7946 0102",
+                "slack_id": "U04AB1CD3GH",
+                "teams_id": "connor.hayes@acme.com"
+            }
+        ]
+    },
+    "tech-support": {
+        "teamId": 1,
+        "name": "Technical Support",
+        "email": "tech@support.acme.com",
+        "slack": "#tech-support",
+        "phone": "+44 20 7946 0200",
+        "hours": "Mon-Sun 8am-10pm GMT",
+        "seniors": [
+            {
+                "name": "James Okafor",
+                "email": "j.okafor@acme.com",
+                "phone": "+44 20 7946 0201",
+                "slack_id": "U04AB1CD4IJ",
+                "teams_id": "james.okafor@acme.com"
+            },
+            {
+                "name": "Nina Rossi",
+                "email": "n.rossi@acme.com",
+                "phone": "+44 20 7946 0202",
+                "slack_id": "U04AB1CD5KL",
+                "teams_id": "nina.rossi@acme.com"
+            }
+        ]
+    },
+    "logistics-team": {
+        "teamId": 2,
+        "name": "Logistics & Delivery",
+        "email": "delivery@support.acme.com",
+        "slack": "#logistics",
+        "phone": "+44 20 7946 0300",
+        "hours": "Mon-Sat 8am-8pm GMT",
+        "seniors": [
+            {
+                "name": "Priya Sharma",
+                "email": "p.sharma@acme.com",
+                "phone": "+44 20 7946 0301",
+                "slack_id": "U04AB1CD6MN",
+                "teams_id": "priya.sharma@acme.com"
+            },
+            {
+                "name": "Luke Freeman",
+                "email": "l.freeman@acme.com",
+                "phone": "+44 20 7946 0302",
+                "slack_id": "U04AB1CD7OP",
+                "teams_id": "luke.freeman@acme.com"
+            }
+        ]
+    },
+    "retention-team": {
+        "teamId": 3,
+        "name": "Customer Retention",
+        "email": "retention@support.acme.com",
+        "slack": "#retention",
+        "phone": "+44 20 7946 0400",
+        "hours": "Mon-Fri 9am-7pm GMT",
+        "seniors": [
+            {
+                "name": "Daniel Webb",
+                "email": "d.webb@acme.com",
+                "phone": "+44 20 7946 0401",
+                "slack_id": "U04AB1CD8QR",
+                "teams_id": "daniel.webb@acme.com"
+            },
+            {
+                "name": "Fatima Al-Hassan",
+                "email": "f.alhassan@acme.com",
+                "phone": "+44 20 7946 0402",
+                "slack_id": "U04AB1CD9ST",
+                "teams_id": "fatima.alhassan@acme.com"
+            }
+        ]
+    },
+    "retention-priority": {
+        "teamId": 3,
+        "name": "Retention Priority Queue",
+        "email": "retention.priority@support.acme.com",
+        "slack": "#retention-priority",
+        "phone": "+44 20 7946 0410",
+        "hours": "Mon-Sun 8am-10pm GMT",
+        "seniors": [
+            {
+                "name": "Daniel Webb",
+                "email": "d.webb@acme.com",
+                "phone": "+44 20 7946 0401",
+                "slack_id": "U04AB1CD8QR",
+                "teams_id": "daniel.webb@acme.com"
+            },
+            {
+                "name": "Fatima Al-Hassan",
+                "email": "f.alhassan@acme.com",
+                "phone": "+44 20 7946 0402",
+                "slack_id": "U04AB1CD9ST",
+                "teams_id": "fatima.alhassan@acme.com"
+            }
+        ]
+    },
+    "senior-support": {
+        "teamId": 4,
+        "name": "Senior Support",
+        "email": "senior@support.acme.com",
+        "slack": "#senior-support",
+        "phone": "+44 20 7946 0500",
+        "hours": "Mon-Sun 24hrs",
+        "seniors": [
+            {
+                "name": "Rachel Torres",
+                "email": "r.torres@acme.com",
+                "phone": "+44 20 7946 0501",
+                "slack_id": "U04AB1CDAUV",
+                "teams_id": "rachel.torres@acme.com"
+            },
+            {
+                "name": "Omar Khalid",
+                "email": "o.khalid@acme.com",
+                "phone": "+44 20 7946 0502",
+                "slack_id": "U04AB1CDBWX",
+                "teams_id": "omar.khalid@acme.com"
+            }
+        ]
+    },
+    "legal-escalation": {
+        "teamId": 5,
+        "name": "Legal & Compliance",
+        "email": "legal@support.acme.com",
+        "slack": "#legal-escalation",
+        "phone": "+44 20 7946 0600",
+        "hours": "Mon-Fri 9am-5pm GMT",
+        "seniors": [
+            {
+                "name": "Marcus Chen",
+                "email": "m.chen@acme.com",
+                "phone": "+44 20 7946 0601",
+                "slack_id": "U04AB1CDCYZ",
+                "teams_id": "marcus.chen@acme.com"
+            }
+        ]
+    },
+    "manual-review": {
+        "teamId": 6,
+        "name": "Manual Review Team",
+        "email": "review@support.acme.com",
+        "slack": "#manual-review",
+        "phone": "+44 20 7946 0700",
+        "hours": "Mon-Fri 9am-6pm GMT",
+        "seniors": [
+            {
+                "name": "Aisha Patel",
+                "email": "a.patel@acme.com",
+                "phone": "+44 20 7946 0701",
+                "slack_id": "U04AB1CDD12",
+                "teams_id": "aisha.patel@acme.com"
+            },
+            {
+                "name": "Ben Cartwright",
+                "email": "b.cartwright@acme.com",
+                "phone": "+44 20 7946 0702",
+                "slack_id": "U04AB1CDE34",
+                "teams_id": "ben.cartwright@acme.com"
+            }
+        ]
+    },
+    "customer-success": {
+        "teamId": 7,
+        "name": "Customer Success",
+        "email": "success@support.acme.com",
+        "slack": "#customer-success",
+        "phone": "+44 20 7946 0800",
+        "hours": "Mon-Fri 9am-6pm GMT",
+        "seniors": [
+            {
+                "name": "Tom Baxter",
+                "email": "t.baxter@acme.com",
+                "phone": "+44 20 7946 0801",
+                "slack_id": "U04AB1CDF56",
+                "teams_id": "tom.baxter@acme.com"
+            },
+            {
+                "name": "Isla Morgan",
+                "email": "i.morgan@acme.com",
+                "phone": "+44 20 7946 0802",
+                "slack_id": "U04AB1CDG78",
+                "teams_id": "isla.morgan@acme.com"
+            }
+        ]
+    }
+}

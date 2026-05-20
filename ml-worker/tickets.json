@@ -1,0 +1,580 @@
+[
+  {
+    "id": 0,
+    "created_at": 1747475400,
+    "messages": [
+      {
+        "content": "I was charged twice for my order #4821. Please refund the duplicate charge immediately.",
+        "created_at": 1747475400
+      },
+      {
+        "content": "I've checked my bank statement again and yes, two identical charges of \u00a349.99 went out this morning.",
+        "created_at": 1747476200
+      },
+      {
+        "content": "It's been 2 hours now and nobody has responded. I need this sorted today.",
+        "created_at": 1747483600
+      }
+    ]
+  },
+  {
+    "id": 1,
+    "created_at": 1747474200,
+    "messages": [
+      {
+        "content": "I can't log into my account. I've reset my password three times and still getting an error.",
+        "created_at": 1747474200
+      },
+      {
+        "content": "The error says 'account temporarily locked'. I haven't done anything wrong, I just forgot my password.",
+        "created_at": 1747475000
+      },
+      {
+        "content": "I have an order arriving tomorrow and I need to check the delivery slot. Please unlock my account.",
+        "created_at": 1747476800
+      },
+      {
+        "content": "Still locked out. This is really frustrating, I've been a customer for 4 years.",
+        "created_at": 1747484000
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "created_at": 1747473000,
+    "messages": [
+      {
+        "content": "My parcel was supposed to arrive Monday, it's now Thursday and tracking hasn't updated in 4 days.",
+        "created_at": 1747473000
+      },
+      {
+        "content": "The tracking just says 'in transit' since Sunday. Is it lost?",
+        "created_at": 1747474800
+      },
+      {
+        "content": "I contacted the courier and they said to contact you as the sender. What is going on?",
+        "created_at": 1747480000
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "created_at": 1747471800,
+    "messages": [
+      {
+        "content": "I want to cancel my subscription immediately. Please confirm cancellation and stop any future charges.",
+        "created_at": 1747471800
+      },
+      {
+        "content": "I cancelled through the app but I'm not sure it went through. Can you confirm on your end?",
+        "created_at": 1747472600
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "created_at": 1747470600,
+    "messages": [
+      {
+        "content": "The app keeps crashing every time I try to open my order history. This has been happening for 2 days.",
+        "created_at": 1747470600
+      },
+      {
+        "content": "I'm on iPhone 15, iOS 17.4. Tried uninstalling and reinstalling, still crashing.",
+        "created_at": 1747471400
+      },
+      {
+        "content": "Just tried on my partner's Android phone and same issue. So it's not my device.",
+        "created_at": 1747478000
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "created_at": 1747469400,
+    "messages": [
+      {
+        "content": "Someone has accessed my account without my permission. I can see orders I didn't place. Please help urgently.",
+        "created_at": 1747469400
+      },
+      {
+        "content": "There are three orders I didn't make. Two delivered to an address I don't recognise.",
+        "created_at": 1747470200
+      },
+      {
+        "content": "I've changed my password but I'm worried my payment details have been used. Please freeze my account.",
+        "created_at": 1747471000
+      },
+      {
+        "content": "I've also reported this to my bank. Please respond as a matter of urgency.",
+        "created_at": 1747472000
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "created_at": 1747468200,
+    "messages": [
+      {
+        "content": "My delivery arrived damaged. The box was completely crushed and the item inside is broken.",
+        "created_at": 1747468200
+      },
+      {
+        "content": "I've taken photos of the packaging and the damaged item. Where do I send them?",
+        "created_at": 1747469000
+      },
+      {
+        "content": "This was a gift for my daughter's birthday which is tomorrow. Can you arrange an urgent replacement?",
+        "created_at": 1747470000
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "created_at": 1747467000,
+    "messages": [
+      {
+        "content": "The discount code SAVE20 isn't working at checkout. It keeps saying invalid code.",
+        "created_at": 1747467000
+      },
+      {
+        "content": "I got the code from your email newsletter sent yesterday. I can forward it to you if needed.",
+        "created_at": 1747467800
+      },
+      {
+        "content": "The offer expires today so I really need this resolved quickly.",
+        "created_at": 1747472000
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "created_at": 1747465800,
+    "messages": [
+      {
+        "content": "I've been waiting 3 weeks for my refund. You said 5-7 business days. What is going on?",
+        "created_at": 1747465800
+      },
+      {
+        "content": "I returned the item on the 1st and have the Royal Mail tracking proving delivery on the 3rd.",
+        "created_at": 1747466600
+      },
+      {
+        "content": "I've called twice and been told 'it's being processed'. That's not good enough after 3 weeks.",
+        "created_at": 1747474000
+      },
+      {
+        "content": "I'm going to raise a chargeback with my bank if this isn't resolved by end of day.",
+        "created_at": 1747480000
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "created_at": 1747464600,
+    "messages": [
+      {
+        "content": "The two-factor authentication code isn't arriving on my phone. I'm completely locked out.",
+        "created_at": 1747464600
+      },
+      {
+        "content": "I've waited 10 minutes, requested the code 4 times, still nothing.",
+        "created_at": 1747465400
+      },
+      {
+        "content": "My number is correct in the account settings, I can see it ending in the right digits.",
+        "created_at": 1747466200
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "created_at": 1747463400,
+    "messages": [
+      {
+        "content": "I accidentally ordered the wrong size. The order was placed 10 minutes ago, can you cancel it?",
+        "created_at": 1747463400
+      },
+      {
+        "content": "Order number is #7743. I need a medium not a large.",
+        "created_at": 1747464200
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "created_at": 1747462200,
+    "messages": [
+      {
+        "content": "Your website says next day delivery but I've been waiting 5 days. This is false advertising.",
+        "created_at": 1747462200
+      },
+      {
+        "content": "I ordered specifically because of the next day delivery promise. I needed this for an event.",
+        "created_at": 1747463000
+      },
+      {
+        "content": "The event was yesterday. The item is now useless to me. I want a full refund including delivery.",
+        "created_at": 1747470000
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "created_at": 1747461000,
+    "messages": [
+      {
+        "content": "I never signed up for a premium plan but I've just been charged \u00a329. I want this reversed now.",
+        "created_at": 1747461000
+      },
+      {
+        "content": "Looking at my statements this has been happening for 3 months. That's \u00a387 total.",
+        "created_at": 1747461800
+      },
+      {
+        "content": "I want all three months refunded. I never agreed to this charge.",
+        "created_at": 1747462600
+      },
+      {
+        "content": "If I don't hear back today I'm going to the Financial Ombudsman.",
+        "created_at": 1747470000
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "created_at": 1747459800,
+    "messages": [
+      {
+        "content": "My account email needs updating. I no longer have access to the email address I registered with.",
+        "created_at": 1747459800
+      },
+      {
+        "content": "The old email was from my previous employer. I left 6 months ago and can't access it.",
+        "created_at": 1747460600
+      },
+      {
+        "content": "I can verify my identity any other way you need \u2014 order history, billing address, phone number.",
+        "created_at": 1747461400
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "created_at": 1747458600,
+    "messages": [
+      {
+        "content": "The item I received is completely different from what was shown in the photos online.",
+        "created_at": 1747458600
+      },
+      {
+        "content": "I ordered a navy blue jacket and received a black one. The product code on the label is different too.",
+        "created_at": 1747459400
+      },
+      {
+        "content": "I need the correct item before the weekend. Can you arrange an express replacement?",
+        "created_at": 1747460200
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "created_at": 1747457400,
+    "messages": [
+      {
+        "content": "I'm getting a 500 server error every time I try to check out. My cart has 8 items in it.",
+        "created_at": 1747457400
+      },
+      {
+        "content": "I've tried on two different browsers and my phone. Same error every time.",
+        "created_at": 1747458200
+      },
+      {
+        "content": "Some of the items in my cart are low stock. I'm worried they'll sell out while I wait for this to be fixed.",
+        "created_at": 1747459000
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "created_at": 1747456200,
+    "messages": [
+      {
+        "content": "I paused my subscription last month but you charged me anyway. This is unacceptable.",
+        "created_at": 1747456200
+      },
+      {
+        "content": "I have a screenshot of the pause confirmation. The charge went out the day after I paused.",
+        "created_at": 1747457000
+      },
+      {
+        "content": "Please refund the charge and confirm my subscription is actually paused this time.",
+        "created_at": 1747457800
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "created_at": 1747455000,
+    "messages": [
+      {
+        "content": "My tracking link just says 'label created' and hasn't moved in 6 days. Is my order lost?",
+        "created_at": 1747455000
+      },
+      {
+        "content": "I've contacted the courier and they said the parcel was never collected from your warehouse.",
+        "created_at": 1747455800
+      },
+      {
+        "content": "Can you confirm whether it was actually dispatched? The money has already left my account.",
+        "created_at": 1747456600
+      },
+      {
+        "content": "It's been 6 days of silence. I need answers today please.",
+        "created_at": 1747464000
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "created_at": 1747453800,
+    "messages": [
+      {
+        "content": "I ordered a birthday present for tomorrow and just got an email saying it's delayed by a week. Devastating.",
+        "created_at": 1747453800
+      },
+      {
+        "content": "Is there any way to get it here tomorrow? I'll pay for express if needed.",
+        "created_at": 1747454600
+      },
+      {
+        "content": "If it can't arrive tomorrow then please cancel and refund so I can buy elsewhere.",
+        "created_at": 1747455400
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "created_at": 1747452600,
+    "messages": [
+      {
+        "content": "Your returns policy says 30 days but the returns portal is rejecting my request after 22 days.",
+        "created_at": 1747452600
+      },
+      {
+        "content": "I purchased on the 1st. Today is the 23rd. That is clearly within 30 days.",
+        "created_at": 1747453400
+      },
+      {
+        "content": "The portal error says 'return window expired' which is factually incorrect.",
+        "created_at": 1747454200
+      },
+      {
+        "content": "Please either fix the portal or process this return manually.",
+        "created_at": 1747455000
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "created_at": 1747451400,
+    "messages": [
+      {
+        "content": "The product I bought stopped working after one week. It should be covered under warranty.",
+        "created_at": 1747451400
+      },
+      {
+        "content": "It's a blender. It just stopped turning on completely. No visible damage.",
+        "created_at": 1747452200
+      },
+      {
+        "content": "I have the receipt and the warranty card. How do I make a warranty claim?",
+        "created_at": 1747453000
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "created_at": 1747450200,
+    "messages": [
+      {
+        "content": "I can't download my receipts from the account page. The download button does nothing.",
+        "created_at": 1747450200
+      },
+      {
+        "content": "I need these for a business expense claim by end of week. It's quite urgent.",
+        "created_at": 1747451000
+      },
+      {
+        "content": "Tried on Chrome, Firefox and Edge. Nothing happens when I click download on any of them.",
+        "created_at": 1747451800
+      }
+    ]
+  },
+  {
+    "id": 22,
+    "created_at": 1747449000,
+    "messages": [
+      {
+        "content": "The item was listed as in stock when I ordered but I've just been told it's out of stock. Please refund me.",
+        "created_at": 1747449000
+      },
+      {
+        "content": "Why was it showing as available if you didn't have stock? This is misleading.",
+        "created_at": 1747449800
+      },
+      {
+        "content": "Please process the refund today. Order number #5512.",
+        "created_at": 1747450600
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "created_at": 1747447800,
+    "messages": [
+      {
+        "content": "I was charged a cancellation fee but I cancelled well within the free cancellation window.",
+        "created_at": 1747447800
+      },
+      {
+        "content": "I cancelled at 9:15am. Your policy says free cancellation up to 10am. The maths doesn't add up.",
+        "created_at": 1747448600
+      },
+      {
+        "content": "I have the cancellation confirmation email timestamped 9:15am if you need proof.",
+        "created_at": 1747449400
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "created_at": 1747446600,
+    "messages": [
+      {
+        "content": "My order shows as delivered but I never received it. Nobody knocked and there's no card through the door.",
+        "created_at": 1747446600
+      },
+      {
+        "content": "The tracking photo shows it was left outside a door but that's not my door.",
+        "created_at": 1747447400
+      },
+      {
+        "content": "I've checked with neighbours and nobody has it. I think it's been delivered to the wrong address.",
+        "created_at": 1747448200
+      },
+      {
+        "content": "This was \u00a3120 worth of goods. I need this resolved urgently.",
+        "created_at": 1747456000
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "created_at": 1747445400,
+    "messages": [
+      {
+        "content": "I'm being charged VAT but I'm a registered business and should be exempt. Please correct this.",
+        "created_at": 1747445400
+      },
+      {
+        "content": "My VAT number is GB123456789. I provided this when signing up but it's still being applied.",
+        "created_at": 1747446200
+      },
+      {
+        "content": "Can you reissue the last three invoices with the correct VAT treatment?",
+        "created_at": 1747447000
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "created_at": 1747444200,
+    "messages": [
+      {
+        "content": "How long does it take to process a return? I sent mine back 2 weeks ago and heard nothing.",
+        "created_at": 1747444200
+      },
+      {
+        "content": "Royal Mail tracking confirms delivery to your warehouse on the 8th. Reference RM8823774GB.",
+        "created_at": 1747445000
+      },
+      {
+        "content": "It's now been 14 days since you received it. When will I get my refund?",
+        "created_at": 1747452000
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "created_at": 1747443000,
+    "messages": [
+      {
+        "content": "My saved payment method keeps getting removed. I have to re-enter my card every single order.",
+        "created_at": 1747443000
+      },
+      {
+        "content": "This has happened on the last four orders. Something is clearly wrong with my account.",
+        "created_at": 1747443800
+      }
+    ]
+  },
+  {
+    "id": 28,
+    "created_at": 1747441800,
+    "messages": [
+      {
+        "content": "I received someone else's order. My name is on the label but the contents are completely wrong.",
+        "created_at": 1747441800
+      },
+      {
+        "content": "I can see another customer's name on the items inside. I haven't opened everything.",
+        "created_at": 1747442600
+      },
+      {
+        "content": "I imagine someone else has my order too. How do we sort this out?",
+        "created_at": 1747443400
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "created_at": 1747440600,
+    "messages": [
+      {
+        "content": "The order confirmation email never arrived. I've checked spam and nothing. Did my order go through?",
+        "created_at": 1747440600
+      },
+      {
+        "content": "The money has left my account but I have no order number or confirmation.",
+        "created_at": 1747441400
+      },
+      {
+        "content": "My email is correct on my account, I can see it in settings.",
+        "created_at": 1747442200
+      }
+    ]
+  },
+  {
+    "id": 30,
+    "created_at": 1747439400,
+    "messages": [
+      {
+        "content": "Your chat support told me my refund was approved but it's been 10 days and nothing has arrived.",
+        "created_at": 1747439400
+      },
+      {
+        "content": "I have the chat transcript where your agent confirmed the refund on the 7th.",
+        "created_at": 1747440200
+      },
+      {
+        "content": "My bank says no refund has been initiated. So either it wasn't processed or there's an error on your end.",
+        "created_at": 1747441000
+      },
+      {
+        "content": "I want the name of the agent who approved it and why it hasn't been processed.",
+        "created_at": 1747448000
+      }
+    ]
+  }
+]
