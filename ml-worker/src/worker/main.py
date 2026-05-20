@@ -1,5 +1,3 @@
-import logging
-import sys
 from fastapi import FastAPI, APIRouter, Request, status
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
@@ -7,17 +5,7 @@ from .store import Store
 from .team import TeamRepository
 from .pipeline import TicketPipeline
 from .integrations import Integrations
-
-
-def configure_logging():
-    logging.basicConfig(
-        level=logging.INFO,
-        stream=sys.stdout,
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-        force=True,
-    )
-
-
+from .logging import configure_logging
 class TicketIdBody(BaseModel):
     ticket_id: str
 
@@ -69,18 +57,3 @@ async def pick_ticket(req: Request, body: TicketIdBody):
 
 app.include_router(v1_router)
 
-
-async def cli():
-    configure_logging()
-    store = Store(url="redis://localhost:6379")
-    integrations = Integrations()
-    team_repository = TeamRepository()
-    team_repository.new()
-
-    pipeline = TicketPipeline(team_repository, integrations)
-    store.load()
-    store.connect()
-
-    ticket = store.find_ticket_by_ref("3")
-    ctx = await pipeline.run(ticket)
-    print("ticket pipeline complete", ctx)

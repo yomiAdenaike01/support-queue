@@ -17,8 +17,11 @@ class Store:
 
         self._url = url
 
-    def complete_ticket(self, ticket_id: str):
-        self._cache.xack(ticket_id)
+    def ack(self, ticket_id: str):
+        try:
+            self._cache.xack(ticket_id)
+        except:
+            return
 
     def connect(self):
         self._cache = Redis(host=self._url)
