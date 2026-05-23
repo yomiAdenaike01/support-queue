@@ -1,25 +1,22 @@
+from __future__ import annotations
 import json
 import asyncio
 import logging
-from time import perf_counter
 from textblob import TextBlob
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional, TypedDict
-from .team import TeamRepository, Team
-from .ticket import Ticket
-from .integrations import Integrations
+from typing import Optional, TypedDict, TYPE_CHECKING
+from ..integrations import Integrations
+from .pipeline_stage import Stage, StageRegister
+
+
+if TYPE_CHECKING:
+    from ..team import TeamRepository, Team
+    from ..ticket import Ticket
 
 logger = logging.getLogger(__name__)
 
-
-class Timer:
-    _start: float
-    def __init__(self):
-        self._start = perf_counter()
-
-    def elapsed(self) -> float:
-        return round((perf_counter() - self._start) * 1000, 2)
+# run stage class
 
 
 class ClassificationJson(TypedDict):
@@ -59,7 +56,7 @@ class Priority(str, Enum):
 class WorkerContext:
     ticket: Ticket
     average_sentiment: float = 0.0
-    priority: Optional[Priority] = None
+    priority: Optional["Priority"] = None
     category: str = ""
     confidence_score: float = 0.0
     suggested_teams: list["Team"] = field(default_factory=list)
@@ -67,22 +64,34 @@ class WorkerContext:
     requires_urgency: bool = False
     urgency_reason: Optional[str] = None
 
+    def to_json(self):
+        return json.dumps({
+            "average_sentiment": self.average_sentiment,
+            "priority":self.priority,
+            "suggested_teams": self.suggested_teams,
+            "suggested_response": self.suggested_response,
+            "urgency_reason": self.urgency_reason,
+            "requires_urgency": self.requires_urgency,
+            })
 
-class TicketPipeline:
-    _team_repository: TeamRepository
-    _integrations: Integrations
 
-    def __init__(self, team_repository: TeamRepository, integrations: Integrations):
+class Pipeline:
+    _team_repository: "TeamRepository"
+    _integrations: "Integrations"
+    _stage_register: "StageRegister"
+
+    def __init__(self, team_repository: "TeamRepository", integrations: "Integrations"):
         self._team_repository = team_repository
         self._integrations = integrations
+        self._stage_register = StageRegister()
 
     def _sentiment_per_message(self, ctx: WorkerContext) -> WorkerContext:
-        timer = Timer()
+        stage = self._stage_register.start_new_stage(name="sentiment-analysis", input=ctx)
         average_sentiment = sum(
             [TextBlob(msg.content).sentiment.polarity for msg in ctx.ticket.messages]
         ) / len(ctx.ticket.messages)
         ctx.average_sentiment = average_sentiment
-        duration_ms = timer.elapsed()
+        duration_ms = stage.complete(average_sentiment)
         logger.info(
             "Calculated ticket sentiment in %sms",
             duration_ms,
@@ -108,7 +117,7 @@ class TicketPipeline:
     """
 
     async def _get_llm_classification(self, ctx: WorkerContext) -> ClassificationJson:
-        start_at_timer = Timer()
+        stage = self._stage_register.start_new_stage(name="llm-classification", input=ctx)
         logger.info(
             "Starting LLM ticket classification",
             extra={
@@ -122,7 +131,7 @@ class TicketPipeline:
         classification_result: ClassificationJson = json.loads(
             await self._integrations.llm.prompt(system_prompt, last_msgs)
         )
-        duration_ms = start_at_timer.elapsed()
+        duration_ms = stage.complete(classification_result)
         logger.info(
             "Finished LLM ticket classification in %sms",
             duration_ms,
@@ -138,7 +147,7 @@ class TicketPipeline:
         return classification_result
 
     async def _run_classifications(self, ctx: WorkerContext) -> WorkerContext:
-        started_at = Timer()
+        stage = self._stage_register.start_new_stage(name="classifcations", input=ctx)
         classification = await self._get_llm_classification(ctx)
 
         ctx.category = classification.get("category")
@@ -146,48 +155,51 @@ class TicketPipeline:
         ctx.suggested_response = classification.get("suggested_response")
         ctx.requires_urgency = classification.get("urgency_flag")
         ctx.urgency_reason = classification.get("urgency_reason")
+        elapsed = stage.complete(ctx)
         logger.info(
             "Applied ticket classification in %sms",
-            started_at.elapsed(),
+            elapsed,
             extra={
                 "ticket_id": ctx.ticket.id,
                 "category": ctx.category,
                 "priority": ctx.priority,
                 "requires_urgency": ctx.requires_urgency,
-                "duration_ms": started_at.elapsed(),
+                "duration_ms": elapsed,
             },
         )
 
     async def _resolve_team(self, ctx: WorkerContext):
-        timer = Timer()
+        stage = self._stage_register.start_new_stage(name="team-resolution",input=ctx)
         if ctx.category == "" or ctx.category is None:
             raise ValueError("No category found on ctx")
         suggested_teams = await self._team_repository.gather_team_contacts_by_category(
             ctx.category
         )
         ctx.suggested_teams = suggested_teams
+        elapsed = stage.complete(ctx)
         logger.info(
             "Resolved suggested teams in %sms",
-            timer.elapsed(),
+            elapsed,
             extra={
                 "ticket_id": ctx.ticket.id,
                 "category": ctx.category,
                 "team_count": len(suggested_teams),
-                "duration_ms": timer.elapsed(),
+                "duration_ms": elapsed,
             },
         )
 
     async def _send_team_notifications(self, ctx: WorkerContext):
-        timer = Timer()
+        stage = self._stage_register.start_new_stage(name="send-team-notifications", input=ctx)
+
         if ctx.suggested_response is None or len(ctx.suggested_teams) < 1:
-            
+            elapsed = stage.complete(ctx)
             logger.info(
                 "Skipped team notifications in %sms",
-                timer.elapsed(),
+                elapsed,
                 extra={
                     "ticket_id": ctx.ticket.id,
                     "team_count": len(ctx.suggested_teams),
-                    "duration_ms": timer.elapsed(),
+                    "duration_ms": elapsed,
                 },
             )
             return
@@ -195,15 +207,15 @@ class TicketPipeline:
         
         task = asyncio.create_task(self._integrations.notifications.send_many(contacts))
         task.add_done_callback(self._log_notification_task_result)
+        elapsed = stage.complete(ctx)
 
-        duration_ms = timer.elapsed()
         logger.info(
             "Sent team notifications in %sms",
-            duration_ms,
+            elapsed,
             extra={
                 "ticket_id": ctx.ticket.id,
                 "contact_count": len(contacts),
-                "duration_ms": duration_ms,
+                "duration_ms": elapsed,
             },
         )
 
@@ -220,7 +232,8 @@ class TicketPipeline:
             )
 
     async def run(self, ticket: Ticket) -> WorkerContext:
-        timer = Timer()
+        
+        stage = self._stage_register.start_new_stage("FULL_PIPELINE", input=ticket)
         logger.info("Starting ticket pipeline", extra={"ticket_id": ticket.id})
         ctx = WorkerContext(ticket=ticket)
         try:
@@ -228,29 +241,29 @@ class TicketPipeline:
             await self._run_classifications(ctx)
             await self._resolve_team(ctx)
         except Exception:
-            
+            elapsed = stage.complete(output=ctx)
             logger.exception(
                 "Ticket pipeline failed after %sms",
-                timer.elapsed(),
+                elapsed,
                 extra={
                     "ticket_id": ticket.id,
-                    "duration_ms": timer.elapsed(),
+                    "duration_ms": elapsed,
                 },
             )
             raise
 
         task = asyncio.create_task(self._send_team_notifications(ctx))
         task.add_done_callback(self._log_notification_task_result)
-        
+        elapsed = stage.complete(ctx)
         logger.info(
             "Finished ticket pipeline in %sms",
-            timer.elapsed(),
+            elapsed,
             extra={
                 "ticket_id": ticket.id,
                 "category": ctx.category,
                 "priority": ctx.priority,
                 "requires_urgency": ctx.requires_urgency,
-                "duration_ms": timer.elapsed(),
+                "duration_ms": elapsed,
             },
         )
         return ctx

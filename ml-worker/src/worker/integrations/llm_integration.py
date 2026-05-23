@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass
 from time import perf_counter
-
+from ..utils import Timer
 from httpx import AsyncClient
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class LLMIntegration:
     def __init__(self, options: IntegrationOptions):
         self._options = options
 
-    async def prompt(self, system_prompt: str, prompt: str):
+    async def prompt(self, system_prompt: str, prompt: str, timer = None):
         url = f"{self._options.base_url}/chat/completions"
         body = {
             "model": "llama3.2",
@@ -44,7 +44,7 @@ class LLMIntegration:
                 {"role": "user", "content": prompt},
             ],
         }
-        started_at = perf_counter()
+        timer = Timer() if timer is None else timer
         logger.info(
             "Sending LLM prompt",
             extra={
@@ -57,7 +57,7 @@ class LLMIntegration:
         try:
             async with AsyncClient(timeout=self._options.timeout) as client:
                 response = await client.post(url, json=body)
-                duration_ms = round((perf_counter() - started_at) * 1000, 2)
+                duration_ms = timer.elapsed()
                 logger.info(
                     "Received LLM response in %sms",
                     duration_ms,
@@ -71,7 +71,6 @@ class LLMIntegration:
                 response.raise_for_status()
                 data = response.json()
                 content = data["choices"][0]["message"]["content"]
-                duration_ms = round((perf_counter() - started_at) * 1000, 2)
                 logger.info(f"LLM Response: {content}")
                 logger.info(
                     "Parsed LLM response in %sms",
@@ -85,7 +84,7 @@ class LLMIntegration:
                 )
                 return content
         except Exception:
-            duration_ms = round((perf_counter() - started_at) * 1000, 2)
+            duration_ms = timer.elapsed()
             logger.exception(
                 "LLM prompt failed after %sms",
                 duration_ms,

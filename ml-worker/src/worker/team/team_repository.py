@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from dataclasses import dataclass, field
+from ..utils import read_json, JSONFilenames
 
 TEAMS_BY_CATEGORY: dict[str, list[str]] = {
     "BILLING": ["billing-team", "logistics-team"],
@@ -34,8 +35,7 @@ class TeamRepository:
         self._teams = {}
 
     def new(self):
-        root = Path(__file__).parents[3].resolve()
-        teams: dict = json.loads(Path(root / "teams.json").read_text(encoding="utf-8"))
+        teams: dict = read_json(JSONFilenames.TEAM)
 
         for team_slug, team_info in teams.items():
             contact = Contact(
