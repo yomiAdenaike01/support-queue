@@ -4,35 +4,43 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	"github.com/redis/go-redis/v9"
-	"github.com/yomiAdenaike01/support-queue/internals/db/queries"
+	redisinfra "github.com/yomiAdenaike01/support-queue/internals/infra/redis"
 )
 
 type Handler struct {
-	db         *sqlx.DB
-	repository *Repository
-	redis      *redis.Client
-	streamName string
-	ctx        context.Context
+	db           *sqlx.DB
+	repository   *Repository
+	streamClient *redisinfra.StreamClient
+	ctx          context.Context
 }
 
-func NewHandler(ctx context.Context, db *sqlx.DB, redisClient *redis.Client, streamName string) *Handler {
+func NewHandler(ctx context.Context, db *sqlx.DB, streamClient *redisinfra.StreamClient) *Handler {
 	return &Handler{
-		db:         db,
-		repository: NewRepository(db),
-		redis:      redisClient,
-		streamName: streamName,
-		ctx:        ctx,
+		db:           db,
+		repository:   NewRepository(db),
+		streamClient: streamClient,
+		ctx:          ctx,
 	}
 }
 
 func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
 	group.POST("/support/ticket", h.create)
 	group.GET("/support/ticket/:id", h.findById)
+	group.POST("/support/ticket/:id/message", h.insertMessage)
+}
+
+func (h *Handler) pushToStream(ticketId string, message string) error {
+	return h.streamClient.Push(h.ctx, redisinfra.PushEvent{
+		EventType: redisinfra.PUSHEVENT_TICKET_SUBMITTED,
+		Values: map[string]interface{}{
+			"ticket_id": ticketId,
+			"message":   message,
+		}})
 }
 
 func (h *Handler) create(ctx *gin.Context) {
@@ -46,44 +54,88 @@ func (h *Handler) create(ctx *gin.Context) {
 		return
 	}
 
-	var createdTicket DbCreateTicketResult
-	query, args, err := sqlx.Named(queries.CREATE_TICKET_QUERY, map[string]interface{}{
-		"customer_email":  data.CustomerEmail,
-		"subject":         data.Subject,
-		"message_content": data.Message,
+	result, err := h.repository.Create(ctx, DbCreateTicketInput{
+		CustomerEmail:  data.CustomerEmail,
+		Subject:        data.Subject,
+		MessageContent: data.Message,
 	})
+
 	if err != nil {
 		panic(err)
 	}
-	query = h.db.Rebind(query)
 
-	if err := h.db.Get(&createdTicket, query, args...); err != nil {
-		panic(err)
-	}
-
-	result, err := h.redis.XAdd(h.ctx, &redis.XAddArgs{
-		Stream: h.streamName,
-		Values: map[string]any{
-			"ticket_id": 3,
-			"message":   data.Message,
-		},
-	}).Result()
+	err = h.pushToStream(result.TicketId, data.Message)
 	if err != nil {
 		panic(err)
 	}
-	log.Println(result)
 
 	ctx.JSON(http.StatusOK, CreateResponse{
-		CustomerEmail: createdTicket.CustomerEmail,
+		CustomerEmail: result.CustomerEmail,
 		Messages: []MessageResponse{
 			{
-				Id:      createdTicket.MessageId,
-				Content: createdTicket.MessageContent,
-				Role:    createdTicket.Role,
+				Id:      result.MessageId,
+				Content: result.MessageContent,
+				Role:    result.Role,
 			},
 		},
-		TicketId: createdTicket.TicketId,
+		TicketId: result.TicketId,
 	})
+}
+
+func toPaginationInput(page string) IPaginationInput {
+	defaultInput := PaginationInput{
+		Offset: 0,
+		Limit:  5,
+	}
+	if page == "" {
+		return defaultInput
+	}
+	pageAsInt, err := strconv.Atoi(page)
+	if err != nil {
+		log.Printf("Failed to convert page to int reason=%s", err.Error())
+		return defaultInput
+	}
+
+	return PaginationInput{
+		Limit:  pageAsInt,
+		Offset: pageAsInt + 5,
+	}
+}
+
+func (h *Handler) insertMessage(ctx *gin.Context) {
+
+	var data struct {
+		MessageContent string `json:"content"`
+		CustomerEmail  string `json:"customerEmail"`
+		Role           string `json:"role"`
+	}
+	if err := ctx.ShouldBindBodyWithJSON(&data); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	ticketId := uuid.MustParse(ctx.Param("id")).String()
+
+	if data.Role == "" {
+		data.Role = "assistant"
+	}
+	dbInsertInput := DbInsertMessageInput{
+		CustomerEmail:  data.CustomerEmail,
+		TicketId:       ticketId,
+		Role:           data.Role,
+		MessageContent: data.MessageContent,
+	}
+	msg, err := h.repository.InsertMessage(ctx.Request.Context(), dbInsertInput)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	err = h.pushToStream(ticketId, msg.Content)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	ctx.JSON(http.StatusOK, msg)
 }
 
 func (h *Handler) findById(ctx *gin.Context) {
@@ -92,8 +144,11 @@ func (h *Handler) findById(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"errors": "Invalid ticket id"})
 		return
 	}
-
-	ticket, ok, err := h.repository.FindById(ctx.Request.Context(), id)
+	paginationInput := toPaginationInput(ctx.Query("message_page"))
+	ticket, ok, err := h.repository.FindById(ctx.Request.Context(), FindByIdInput{
+		TicketId:   id,
+		Pagination: paginationInput,
+	})
 	if err != nil {
 		panic(err)
 	}

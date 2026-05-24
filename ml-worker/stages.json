@@ -1,0 +1,46 @@
+{
+    "stage_name": "sentiment-analysis",
+    "stage_input": "{\"average_sentiment\": 0.0, \"priority\": null, \"suggested_teams\": [], \"suggested_response\": \"\", \"urgency_reason\": null, \"requires_urgency\": false}",
+    "starttime": 8.971499458,
+    "endtime": 3365.91
+}{
+    "stage_name": "FULL_PIPELINE",
+    "stage_input": "{\"id\": \"0294b719-51d5-492c-bb8b-8d62df9aa295\", \"subject\": \"BILLING ERROR\", \"customer_email\": \"adenaikeyomi@gmail.com\"}",
+    "starttime": 8.971084083,
+    "endtime": 133809.7
+}{
+    "stage_name": "sentiment-analysis",
+    "stage_input": "{\"average_sentiment\": -0.16, \"priority\": null, \"suggested_teams\": [], \"suggested_response\": \"\", \"urgency_reason\": null, \"requires_urgency\": false}",
+    "starttime": 15.311006083,
+    "endtime": 1200.04
+}{
+    "stage_name": "FULL_PIPELINE",
+    "stage_input": "{\"id\": \"0294b719-51d5-492c-bb8b-8d62df9aa295\", \"subject\": \"BILLING ERROR\", \"customer_email\": \"adenaikeyomi@gmail.com\", \"messages\": [\"i hate all of it\", \"im begging you i dont like this anymore and want to cancel\", \"im begging you i dont like this anymore and want to cancel\", \"im begging you i dont like this anymore and want to cancel\", \"im begging you i dont like this anymore and want to cancel\"]}",
+    "starttime": 15.31085575,
+    "endtime": 201256.14
+}{
+    "stage_name": "sentiment-analysis",
+    "stage_input": "{\"average_sentiment\": -0.22000000000000003, \"priority\": null, \"suggested_teams\": [], \"suggested_response\": \"\", \"urgency_reason\": null, \"requires_urgency\": false}",
+    "starttime": 6.489983666,
+    "endtime": 55.55
+}{
+    "stage_name": "llm-classification",
+    "stage_input": "{\"average_sentiment\": -0.22000000000000003, \"priority\": null, \"suggested_teams\": [], \"suggested_response\": \"\", \"urgency_reason\": null, \"requires_urgency\": false}",
+    "starttime": 6.545912916,
+    "endtime": 162264.91
+}{
+    "stage_name": "classifcations",
+    "stage_input": "{\"average_sentiment\": -0.22000000000000003, \"priority\": \"URGENT\", \"suggested_teams\": [], \"suggested_response\": \"I apologize for your frustration, but cancellation requests may not be accepted once the trial period has ended. Please reach out to our support team for further assistance.\", \"urgency_reason\": \"This message contains emotional language, suggesting extreme distress.\", \"requires_urgency\": true}",
+    "starttime": 6.545853458,
+    "endtime": 162265.66
+}{
+    "stage_name": "team-resolution",
+    "stage_input": "{\"average_sentiment\": -0.22000000000000003, \"priority\": \"URGENT\", \"suggested_teams\": [], \"suggested_response\": \"I apologize for your frustration, but cancellation requests may not be accepted once the trial period has ended. Please reach out to our support team for further assistance.\", \"urgency_reason\": \"This message contains emotional language, suggesting extreme distress.\", \"requires_urgency\": true}",
+    "starttime": 168.811905208,
+    "endtime": 0.49
+}{
+    "stage_name": "FULL_PIPELINE",
+    "stage_input": "{\"id\": \"0294b719-51d5-492c-bb8b-8d62df9aa295\", \"subject\": \"BILLING ERROR\", \"customer_email\": \"adenaikeyomi@gmail.com\", \"messages\": [\"i hate all of it i really do\", \"i hate all of it\", \"im begging you i dont like this anymore and want to cancel\", \"im begging you i dont like this anymore and want to cancel\", \"im begging you i dont like this anymore and want to cancel\"]}",
+    "starttime": 6.489847541,
+    "endtime": 162323.34
+}

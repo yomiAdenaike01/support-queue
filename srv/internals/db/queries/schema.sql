@@ -95,8 +95,10 @@ CREATE TABLE IF NOT EXISTS messages (
     content TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
 ALTER TABLE messages
     ADD COLUMN IF NOT EXISTS ticket_id UUID REFERENCES tickets(id) ON DELETE CASCADE;
+
 CREATE INDEX IF NOT EXISTS idx_messages_ticket_pk ON messages(ticket_pk);
 CREATE INDEX IF NOT EXISTS idx_messages_ticket_id ON messages(ticket_id);
 CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at ASC);

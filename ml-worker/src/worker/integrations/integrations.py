@@ -9,7 +9,7 @@ class Integrations:
     def __init__(self):
         self.llm = LLMIntegration(
             options=IntegrationOptions(
-                base_url="http://localhost:11434/v1", timeout=120.0
+                base_url="http://localhost:11434/v1", timeout=200.0
             )
         )
         self.notifications = NotificationIntegration()

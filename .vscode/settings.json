@@ -11,5 +11,10 @@
             "password": "pwd",
             "name": "supportops"
         }
-    ]
+    ],
+    "go.diagnostic.vulncheck": "Imports",
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true
+    }
 }

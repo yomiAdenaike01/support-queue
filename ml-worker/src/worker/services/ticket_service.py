@@ -1,4 +1,5 @@
 import json
+import asyncio
 from typing import TYPE_CHECKING, Dict, TypedDict
 from httpx import AsyncClient
 from pathlib import Path
@@ -24,7 +25,7 @@ class TicketService:
     _tickets: Dict[str, "Ticket"] = {}
     _is_dry_run: bool
 
-    def __init__(self, base_url: str, is_dry_run = True):
+    def __init__(self, base_url: str, is_dry_run = False):
         self._base_url = base_url
         self._is_dry_run = is_dry_run
         self._tickets = {}
@@ -48,15 +49,16 @@ class TicketService:
     async def find_ticket_by_id(self, ticket_id: str) -> Ticket:
         if self._is_dry_run:
             return self._tickets.get(ticket_id, None)
-        
         async with AsyncClient() as http:
             try:
-               ticket_by_id_response =  http.post(f"{self._base_url}/{ticket_id}")
-               ticket_json: FindTicketByIdResponse = json.loads(ticket_by_id_response)
+               ticket_by_id_response = await http.get(f"{self._base_url}/{ticket_id}")
+               ticket_json: FindTicketByIdResponse = ticket_by_id_response.json()
                messages_list = [Message(content=msg.get("content"),role=msg.get("role")) for msg in ticket_json.get("messages")]
+               
                return Ticket(id=ticket_json.get("id"),subject=ticket_json.get("subject"), customer_email=ticket_json.get("customer_email"), messages=messages_list)
             except Exception:
                 raise
                 
                 
+
 

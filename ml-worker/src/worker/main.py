@@ -5,19 +5,45 @@ from .integrations import Integrations
 from .logging import configure_logging
 from .services import TicketService
 from logging import getLogger
-import json
+
 logger = getLogger(__name__)
 
+async def health_check(base_url: str):
+    from httpx import AsyncClient
+    max_attempts = 3
+    default_backoff = 5
+    
+    async with AsyncClient() as http:
+        for attempt in range(max_attempts):
+            try:
+                response = await http.get(f"{base_url}/healthz")
+                
+                if response.status_code == 200:
+                    print("Health check passed!")
+                    return True
+                    
+            except Exception as e:
+                print(f"Request failed: {e}")
+            
+            if attempt < max_attempts - 1:
+                delay = default_backoff * (attempt + 1)
+                print(f"Attempt {attempt + 1} failed. Retrying in {delay}s...")
+                await asyncio.sleep(delay)
+                
+        return False      
+
+    
 async def init_worker():
+    base_url = "http://localhost:2342/api/v1"
     configure_logging()
-    ticket_service = TicketService(base_url="http://localhost:2342/api/v1/tickets", is_dry_run=True)
+    await health_check(base_url)
+    ticket_service = TicketService(base_url=f"{base_url}/support/ticket")
     event_bus = EventBus(url="redis://localhost:6379")
     event_bus.connect()
 
     pipeline = Pipeline(TeamRepository(),Integrations())
     while True:
         event = event_bus.await_new_event()
-        logger.info("Listening for messages on TICKETS_STREAM")
         if event is None: 
             continue
         for _,messages in event:

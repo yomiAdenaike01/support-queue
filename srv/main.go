@@ -31,10 +31,9 @@ func main() {
 	defer cancel()
 
 	router := server.NewRouter(server.RouterDependencies{
-		Context:     shutdownCtx,
-		DB:          db,
-		RedisClient: streamClient.Client,
-		StreamName:  streamClient.StreamName,
+		Context:      shutdownCtx,
+		DB:           db,
+		StreamClient: streamClient,
 	})
 	server.Run(ctx, cfg, router)
 }

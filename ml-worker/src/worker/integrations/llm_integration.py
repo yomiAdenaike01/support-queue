@@ -45,8 +45,9 @@ class LLMIntegration:
             ],
         }
         timer = Timer() if timer is None else timer
+        import json
         logger.info(
-            "Sending LLM prompt",
+            f"Sending LLM prompt - {json.dumps(body)}",
             extra={
                 "base_url": self._options.base_url,
                 "model": body["model"],

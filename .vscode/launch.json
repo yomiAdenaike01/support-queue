@@ -1,0 +1,36 @@
+{
+  "configurations": [
+    {
+      "name": "Debug ML Worker",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "worker.main",
+      "cwd": "${workspaceFolder}/ml-worker",
+      "python": "${workspaceFolder}/ml-worker/.venv/bin/python3",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/ml-worker/src"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Debug Go Server",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/srv",
+      "cwd": "${workspaceFolder}/srv",
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug Server + ML Worker",
+      "configurations": [
+        "Debug Go Server",
+        "Debug ML Worker"
+      ],
+      "stopAll": true
+    }
+  ]
+}

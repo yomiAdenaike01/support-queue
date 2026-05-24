@@ -12,3 +12,4 @@ wheels/
 */.gocache
 
 *.env
+__debug*

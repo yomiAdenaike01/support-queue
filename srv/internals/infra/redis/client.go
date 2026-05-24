@@ -12,8 +12,31 @@ import (
 )
 
 type StreamClient struct {
-	Client     *redis.Client
-	StreamName string
+	client     *redis.Client
+	streamName string
+}
+
+func (s *StreamClient) GetStreamName() string {
+	return s.streamName
+}
+
+type PushEventType string
+
+const (
+	PUSHEVENT_TICKET_SUBMITTED = "TICKET_SUBMITTED"
+)
+
+type PushEvent struct {
+	Values    map[string]interface{} `json:"values"`
+	EventType PushEventType          `json:"type"`
+}
+
+func (s *StreamClient) Push(ctx context.Context, event PushEvent) error {
+	_, err := s.client.XAdd(ctx, &redis.XAddArgs{
+		Stream: s.streamName,
+		Values: event.Values,
+	}).Result()
+	return err
 }
 
 func NewStreamClient(ctx context.Context, config *config.Config) (*StreamClient, error) {
@@ -47,7 +70,7 @@ func NewStreamClient(ctx context.Context, config *config.Config) (*StreamClient,
 	}
 
 	return &StreamClient{
-		Client:     client,
-		StreamName: streamName,
+		client:     client,
+		streamName: streamName,
 	}, nil
 }

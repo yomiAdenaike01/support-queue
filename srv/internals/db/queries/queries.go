@@ -10,3 +10,6 @@ var CREATE_TICKET_QUERY string
 
 //go:embed find_ticket_by_id.sql
 var FIND_TICKET_BY_ID_QUERY string
+
+//go:embed create_message.sql
+var INSERT_MESSAGE_QUERY string

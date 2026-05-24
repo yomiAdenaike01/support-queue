@@ -13,9 +13,10 @@ type DbCreateTicketResult struct {
 }
 
 type MessageResponse struct {
-	Id      string `json:"id"`
-	Content string `json:"content"`
-	Role    string `json:"role"`
+	Id       string  `json:"id"`
+	Content  string  `json:"content"`
+	Role     string  `json:"role"`
+	TicketId *string `json:"ticket_id"`
 }
 
 type CreateResponse struct {
@@ -32,6 +33,7 @@ type CreateRequest struct {
 
 type DbFindTicketByIdRow struct {
 	TicketId          string         `db:"ticket_id"`
+	TicketPk          int            `db:"ticket_pk"`
 	CustomerEmail     string         `db:"customer_email"`
 	Subject           string         `db:"subject"`
 	Status            string         `db:"status"`
@@ -54,4 +56,5 @@ type TicketResponse struct {
 	AssignedTeam      *string           `json:"assigned_team,omitempty"`
 	SuggestedResponse *string           `json:"suggested_response,omitempty"`
 	Messages          []MessageResponse `json:"messages"`
+	Pk                int               `json:"-"`
 }

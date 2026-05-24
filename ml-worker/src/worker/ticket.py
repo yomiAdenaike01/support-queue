@@ -1,18 +1,24 @@
 from dataclasses import dataclass
-from datetime import datetime
 
 
 @dataclass
 class Message:
     content: str
-    created_at: datetime
     role: str
 
 
 @dataclass
 class Ticket:
-    id: int
+    id: str
     subject: str
-    created_at: int
     customer_email: str
     messages: list[Message]
+
+    def to_json(self) -> str:
+        import json
+        return json.dumps({
+            "id": self.id,
+            "subject": self.subject,
+            "customer_email": self.customer_email,
+            "messages": [m.content for m in self.messages]
+        })

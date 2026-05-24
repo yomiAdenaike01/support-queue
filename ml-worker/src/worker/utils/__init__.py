@@ -8,8 +8,12 @@ __ROOT_PATH = Path(__file__).parents[4].resolve()
 class Timer:
     def __init__(self):
         self._start = perf_counter()
+    
     def elapsed(self) -> float:
         return round((perf_counter() - self._start) * 1000, 2) 
+    
+    def get_start(self):
+        return self._start
 
 class JSONFilenames(str, Enum):
     TICKETS = 'tickets'
