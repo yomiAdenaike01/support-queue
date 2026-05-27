@@ -1,13 +1,17 @@
-package team
+package teamdomain
 
 import (
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	integrationsdomain "github.com/yomiAdenaike01/support-queue/internals/domains/integrations"
 )
 
 type Handler struct {
-	repository *Repository
+	repository   *Repository
+	integrations *integrationsdomain.Integrations
 }
 
 func NewHandler(repository *Repository) *Handler {
@@ -15,77 +19,71 @@ func NewHandler(repository *Repository) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
-	group.GET("", h.list)
-	group.POST("", h.create)
-	group.GET("/:slug", h.get)
-	group.PUT("/:slug", h.update)
-	group.DELETE("/:slug", h.delete)
+	group.POST("/", h.create)
+	group.GET("/search", h.search)
 }
 
-func (h *Handler) list(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, h.repository.List())
+func (h *Handler) search(ctx *gin.Context) {
+
+	id := ctx.Query("id")
+	departmentsAsString := strings.ReplaceAll(ctx.Query("departments"), " ", "")
+	if id == "" && departmentsAsString == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "No filters provided",
+		})
+		return
+	}
+	deps, err := url.PathUnescape(departmentsAsString)
+	if err != nil {
+		panic(err)
+	}
+	var departments []string
+	if deps != "" {
+		departments = strings.Split(deps, ",")
+	}
+
+	team, err := h.repository.Find(ctx.Request.Context(), Filters{
+		Id:          id,
+		Departments: departments,
+	})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	ctx.JSON(http.StatusFound, team)
 }
 
 func (h *Handler) create(ctx *gin.Context) {
-	var team Team
-	if err := ctx.ShouldBindBodyWithJSON(&team); err != nil {
+	var input CreateTeamRequest
+	if err := ctx.ShouldBindBodyWithJSON(&input); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"errors": err.Error()})
 		return
 	}
-	if team.Slug == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{"errors": "Slug must be defined"})
+	if input.Department == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"errors": "Department must be defined"})
 		return
 	}
-	if team.Name == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{"errors": "Name must be defined"})
+	if len(input.Members) == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"errors": "At least one team member must be defined"})
 		return
+	}
+	for _, member := range input.Members {
+		if member.Name == "" || member.Role == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"errors": "Team member name and role must be defined"})
+			return
+		}
 	}
 
-	createdTeam, ok := h.repository.Create(team)
-	if !ok {
+	createdTeam, created, err := h.repository.Create(ctx.Request.Context(), input)
+	if err != nil {
+		panic(err)
+	}
+	if !created {
 		ctx.JSON(http.StatusConflict, gin.H{"errors": "Team already exists"})
 		return
 	}
+
 	ctx.JSON(http.StatusCreated, createdTeam)
-}
-
-func (h *Handler) get(ctx *gin.Context) {
-	team, ok := h.repository.Get(ctx.Param("slug"))
-	if !ok {
-		ctx.JSON(http.StatusNotFound, gin.H{"errors": "Team not found"})
-		return
-	}
-	ctx.JSON(http.StatusOK, team)
-}
-
-func (h *Handler) update(ctx *gin.Context) {
-	slug := ctx.Param("slug")
-	var team Team
-	if err := ctx.ShouldBindBodyWithJSON(&team); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"errors": err.Error()})
-		return
-	}
-	if team.Name == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{"errors": "Name must be defined"})
-		return
-	}
-	if team.Slug != "" && team.Slug != slug {
-		ctx.JSON(http.StatusBadRequest, gin.H{"errors": "Slug cannot differ from path"})
-		return
-	}
-
-	updatedTeam, ok := h.repository.Update(slug, team)
-	if !ok {
-		ctx.JSON(http.StatusNotFound, gin.H{"errors": "Team not found"})
-		return
-	}
-	ctx.JSON(http.StatusOK, updatedTeam)
-}
-
-func (h *Handler) delete(ctx *gin.Context) {
-	if !h.repository.Delete(ctx.Param("slug")) {
-		ctx.JSON(http.StatusNotFound, gin.H{"errors": "Team not found"})
-		return
-	}
-	ctx.Status(http.StatusNoContent)
 }

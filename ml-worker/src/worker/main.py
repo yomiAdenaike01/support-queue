@@ -1,10 +1,15 @@
+import asyncio
+from logging import getLogger
+from typing import TYPE_CHECKING
 from .event_bus import EventBus
 from .pipeline import Pipeline
 from .team import TeamRepository
 from .integrations import Integrations
 from .logging import configure_logging
-from .services import TicketService
-from logging import getLogger
+from .repositories import TicketRepository
+
+if TYPE_CHECKING:
+    from .pipeline import WorkerContext
 
 logger = getLogger(__name__)
 
@@ -35,13 +40,21 @@ async def health_check(base_url: str):
     
 async def init_worker():
     base_url = "http://localhost:2342/api/v1"
-    configure_logging()
-    await health_check(base_url)
-    ticket_service = TicketService(base_url=f"{base_url}/support/ticket")
-    event_bus = EventBus(url="redis://localhost:6379")
-    event_bus.connect()
+    ticket_repo_url = f"{base_url}/ticket"
+    team_repo_url = f"{base_url}/team"
+    event_bus_url = "redis://localhost:6379"
 
-    pipeline = Pipeline(TeamRepository(),Integrations())
+    configure_logging()
+    
+    await health_check(base_url)
+    
+    ticket_repository = TicketRepository(base_url=ticket_repo_url)
+    team_repository = TeamRepository(base_url=team_repo_url)
+    
+    event_bus = EventBus(url=event_bus_url)
+    event_bus.connect()
+    integrations = Integrations()
+    pipeline = Pipeline(team_repository,integrations)
     while True:
         event = event_bus.await_new_event()
         if event is None: 
@@ -52,15 +65,23 @@ async def init_worker():
                 
                 if ticket_id is None:
                     continue
+                
+                ticket = await ticket_repository.find_by_id(ticket_id)
 
-                ticket = await ticket_service.find_ticket_by_id(ticket_id)
-                print(ticket)
                 if ticket is None:
                     continue
                 
-                await pipeline.run(ticket)
+                pipeline_result = await pipeline.run(ticket)
+                await post_pipeline_result(base_url, pipeline_result)
+                
     
+async def post_pipeline_result(base_url: str, ctx: "WorkerContext"):
+    from httpx import AsyncClient
+    async with AsyncClient() as http:
+        url = f"{base_url}/ml"
+        response = await http.post(url, json=ctx)
+        response.raise_for_status()
 
 if __name__ == "__main__":
-    import asyncio
-    asyncio.run(init_worker())
+    import uvloop
+    uvloop.run(init_worker())

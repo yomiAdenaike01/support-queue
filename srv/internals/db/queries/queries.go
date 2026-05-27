@@ -8,8 +8,17 @@ var SCHEMA_SQL_QUERY string
 //go:embed create_ticket.sql
 var CREATE_TICKET_QUERY string
 
+//go:embed create_team.sql
+var CREATE_TEAM_QUERY string
+
 //go:embed find_ticket_by_id.sql
 var FIND_TICKET_BY_ID_QUERY string
 
 //go:embed create_message.sql
 var INSERT_MESSAGE_QUERY string
+
+//go:embed find_team.sql
+var SEARCH_TEAM_QUERY string
+
+//go:embed update_team.sql
+var UPDATE_TEAM_QUERY string

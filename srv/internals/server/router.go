@@ -6,8 +6,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
+	integrationsdomain "github.com/yomiAdenaike01/support-queue/internals/domains/integrations"
 	teamdomain "github.com/yomiAdenaike01/support-queue/internals/domains/team"
 	ticketdomain "github.com/yomiAdenaike01/support-queue/internals/domains/ticket"
+	workerdomain "github.com/yomiAdenaike01/support-queue/internals/domains/worker"
 	redisinfra "github.com/yomiAdenaike01/support-queue/internals/infra/redis"
 )
 
@@ -15,6 +17,7 @@ type RouterDependencies struct {
 	Context      context.Context
 	DB           *sqlx.DB
 	StreamClient *redisinfra.StreamClient
+	Integrations *integrationsdomain.Integrations
 }
 
 func NewRouter(deps RouterDependencies) *gin.Engine {
@@ -24,9 +27,15 @@ func NewRouter(deps RouterDependencies) *gin.Engine {
 	v1.GET("healthz", func(ctx *gin.Context) {
 		ctx.Status(http.StatusOK)
 	})
+	teamRepository := teamdomain.NewRepository(deps.DB)
+	teamHandler := teamdomain.NewHandler(teamRepository)
+	workerHandler := workerdomain.NewHandler(deps.Integrations, teamRepository)
+	integrationsHandler := integrationsdomain.NewHandler(deps.Integrations)
 
-	teamHandler := teamdomain.NewHandler(teamdomain.NewRepository())
-	teamHandler.RegisterRoutes(v1.Group("/teams"))
+	integrationsHandler.RegisterRoutes(v1.Group("/integrations"))
+
+	workerHandler.RegisterRoutes(v1.Group("/worker"))
+	teamHandler.RegisterRoutes(v1.Group("/team"))
 
 	ticketHandler := ticketdomain.NewHandler(deps.Context, deps.DB, deps.StreamClient)
 	ticketHandler.RegisterRoutes(v1)

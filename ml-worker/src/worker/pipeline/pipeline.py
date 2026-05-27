@@ -59,7 +59,6 @@ class WorkerContext:
     priority: Optional["Priority"] = None
     category: str = ""
     confidence_score: float = 0.0
-    suggested_teams: list["Team"] = field(default_factory=list)
     suggested_response: str = ""
     requires_urgency: bool = False
     urgency_reason: Optional[str] = None
@@ -168,78 +167,15 @@ class Pipeline:
             },
         )
 
-    async def _resolve_team(self, ctx: WorkerContext):
-        stage = self._stage_register.start_new_stage(name="team-resolution",input=ctx)
-        if ctx.category == "" or ctx.category is None:
-            raise ValueError("No category found on ctx")
-        suggested_teams = await self._team_repository.gather_team_contacts_by_category(
-            ctx.category
-        )
-        ctx.suggested_teams = suggested_teams
-        elapsed = stage.complete(ctx)
-        logger.info(
-            "Resolved suggested teams in %sms",
-            elapsed,
-            extra={
-                "ticket_id": ctx.ticket.id,
-                "category": ctx.category,
-                "team_count": len(suggested_teams),
-                "duration_ms": elapsed,
-            },
-        )
 
-    async def _send_team_notifications(self, ctx: WorkerContext):
-        stage = self._stage_register.start_new_stage(name="send-team-notifications", input=ctx)
-
-        if ctx.suggested_response is None or len(ctx.suggested_teams) < 1:
-            elapsed = stage.complete(ctx)
-            logger.info(
-                "Skipped team notifications in %sms",
-                elapsed,
-                extra={
-                    "ticket_id": ctx.ticket.id,
-                    "team_count": len(ctx.suggested_teams),
-                    "duration_ms": elapsed,
-                },
-            )
-            return
-        contacts = [team.contact for team in ctx.suggested_teams]
-        
-        task = asyncio.create_task(self._integrations.notifications.send_many(contacts))
-        task.add_done_callback(self._log_notification_task_result)
-        elapsed = stage.complete(ctx)
-
-        logger.info(
-            "Sent team notifications in %sms",
-            elapsed,
-            extra={
-                "ticket_id": ctx.ticket.id,
-                "contact_count": len(contacts),
-                "duration_ms": elapsed,
-            },
-        )
-
-    def _log_notification_task_result(self, task: asyncio.Task):
-        if task.cancelled():
-            logger.info("Team notification task was cancelled")
-            return
-
-        error = task.exception()
-        if error is not None:
-            logger.error(
-                "Team notification task failed",
-                exc_info=(type(error), error, error.__traceback__),
-            )
 
     async def run(self, ticket: Ticket) -> WorkerContext:
-        
         stage = self._stage_register.start_new_stage("FULL_PIPELINE", input=ticket)
         logger.info("Starting ticket pipeline", extra={"ticket_id": ticket.id})
         ctx = WorkerContext(ticket=ticket)
         try:
             self._sentiment_per_message(ctx)
             await self._run_classifications(ctx)
-            await self._resolve_team(ctx)
         except Exception:
             elapsed = stage.complete(output=ctx)
             logger.exception(
@@ -251,9 +187,6 @@ class Pipeline:
                 },
             )
             raise
-
-        task = asyncio.create_task(self._send_team_notifications(ctx))
-        task.add_done_callback(self._log_notification_task_result)
         elapsed = stage.complete(ctx)
         logger.info(
             "Finished ticket pipeline in %sms",

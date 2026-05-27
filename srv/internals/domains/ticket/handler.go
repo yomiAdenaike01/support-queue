@@ -29,9 +29,9 @@ func NewHandler(ctx context.Context, db *sqlx.DB, streamClient *redisinfra.Strea
 }
 
 func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
-	group.POST("/support/ticket", h.create)
-	group.GET("/support/ticket/:id", h.findById)
-	group.POST("/support/ticket/:id/message", h.insertMessage)
+	group.POST("/ticket", h.create)
+	group.GET("/ticket/:id", h.findById)
+	group.POST("/ticket/:id/message", h.insertMessage)
 }
 
 func (h *Handler) pushToStream(ticketId string, message string) error {

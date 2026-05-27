@@ -1,63 +1,54 @@
-import json
-from pathlib import Path
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from httpx import AsyncClient
 from ..utils import read_json, JSONFilenames
-
-TEAMS_BY_CATEGORY: dict[str, list[str]] = {
-    "BILLING": ["billing-team", "logistics-team"],
-    "TECHNICAL": ["tech-support"],
-    "ACCOUNT_ACCESS": ["billing-team", "retention-team"],
-    "GENERAL": ["customer-success"],
-    "CANCELLATION": ["billing-team", "logistics-team"],
-}
-
+from typing import TypedDict
 
 @dataclass
-class Contact:
+class TeamMember:
+    id: str
     email: str
-    slack: str
+    integrations: str
     phone: str
 
 
 @dataclass
 class Team:
-    teamId: int
-    slug: str
-    name: str
-    contact: Contact
-    hours: list[int] = field(default_factory=list)
+    id: str
+    department: str
+    members: list['TeamMember']
 
+
+class TeamMemberResponse(TypedDict):
+    id: str
+    email_address: str
+    integrations: str
+    phone_number: str
+class TeamsResponse(TypedDict, Team):
+    id: str
+    department: str
+    members: list['TeamMemberResponse']
+
+TEAMS_BY_CATEGORY: dict[str, list[str]] = {
+    "BILLING": ["billing", "logistics"],
+    "TECHNICAL": ["tech-support"],
+    "ACCOUNT_ACCESS": ["billing", "retention"],
+    "GENERAL": ["customer-success"],
+    "CANCELLATION": ["billing", "logistics"],
+}
 
 class TeamRepository:
-    _teams: dict[str, "Team"]
+    _base_url: str
+    def __init__(self, base_url: str):
+        self._base_url = base_url
 
-    def __init__(self):
-        self._teams = {}
-
-    def new(self):
-        teams: dict = read_json(JSONFilenames.TEAM)
-
-        for team_slug, team_info in teams.items():
-            contact = Contact(
-                email=team_info.get("email"),
-                slack=team_info.get("slack"),
-                phone=team_info.get("phone"),
-            )
-            self._teams[team_slug] = Team(
-                name=team_info.get("name"),
-                teamId=team_info.get("teamId"),
-                hours=[0, 24],
-                slug=team_slug,
-                contact=contact,
-            )
-
-    async def gather_team_contacts_by_category(self, category: str) -> list["Team"]:
-        potential_teams: list[str] = TEAMS_BY_CATEGORY.get(category)
-        if potential_teams is None:
-            return None
-        print("resolved-teams ->", potential_teams)
-        return [
-            team
-            for team_slug, team in self._teams.items()
-            if team_slug in potential_teams
-        ]
+    async def get_teams_by_category(self, category: str) -> list["Team"]:
+        async with AsyncClient() as http:
+            try:
+                url = f'{self._base_url}/team/search?departments={','.join(TEAMS_BY_CATEGORY.get(category))}'
+                response = await http.get(url=url)
+                response.raise_for_status()
+                raw_teams: list['TeamsResponse'] = response.json()
+                teams = [Team(id=t.get("id"),department=t.get('department'), members=[TeamMember(email=m.get("email"), id=m.get("id"), phone=m.get("phone_number"), integrations=m.get("integrations")) for m in t.members]) for t in raw_teams]
+                return teams
+            except:
+                raise
