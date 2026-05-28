@@ -16,3 +16,14 @@ __debug*
 *.md
 
 *.vscode
+**/**/node_modules
+.gocache
+create_ticket_examples.json
+dynamic_search_practice.sql
+postgresql_technical_test.sql
+prepared_tickets.json
+sql_practice.sql
+tickets.json
+.vscode/settings.json
+tickets.json
+ml-worker/stages.json

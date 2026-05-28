@@ -1,20 +1,23 @@
 {
-    "sqltools.connections": [
-        {
-            "ssh": "Disabled",
-            "previewLimit": 50,
-            "server": "localhost",
-            "port": 5432,
-            "driver": "PostgreSQL",
-            "database": "supportops",
-            "username": "user",
-            "password": "pwd",
-            "name": "supportops"
-        }
-    ],
-    "go.diagnostic.vulncheck": "Imports",
-    "[python]": {
-        "editor.defaultFormatter": "charliermarsh.ruff",
-        "editor.formatOnSave": true
+  "sqltools.connections": [
+    {
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "database": "supportops",
+      "username": "user",
+      "password": "pwd",
+      "name": "supportops"
     }
+  ],
+  "go.diagnostic.vulncheck": "Imports",
+  "[sql]": {
+    "editor.formatOnSave": false
+  },
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true
+  }
 }

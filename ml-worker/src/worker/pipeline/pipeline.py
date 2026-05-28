@@ -1,18 +1,19 @@
 from __future__ import annotations
 import json
-import asyncio
+import hashlib
 import logging
 from textblob import TextBlob
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, TypedDict, TYPE_CHECKING
 from ..integrations import Integrations
-from .pipeline_stage import Stage, StageRegister
+from .pipeline_stage import StageRegister
+from .pipeline_exception import PipelineException
 
 
 if TYPE_CHECKING:
-    from ..team import TeamRepository, Team
     from ..ticket import Ticket
+    from redis import Redis
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,6 @@ class WorkerContext:
         return json.dumps({
             "average_sentiment": self.average_sentiment,
             "priority":self.priority,
-            "suggested_teams": self.suggested_teams,
             "suggested_response": self.suggested_response,
             "urgency_reason": self.urgency_reason,
             "requires_urgency": self.requires_urgency,
@@ -75,14 +75,14 @@ class WorkerContext:
 
 
 class Pipeline:
-    _team_repository: "TeamRepository"
     _integrations: "Integrations"
     _stage_register: "StageRegister"
+    _cache: "Redis"
 
-    def __init__(self, team_repository: "TeamRepository", integrations: "Integrations"):
-        self._team_repository = team_repository
+    def __init__(self, integrations: "Integrations", cache: "Redis"):
         self._integrations = integrations
         self._stage_register = StageRegister()
+        self._cache = cache
 
     def _sentiment_per_message(self, ctx: WorkerContext) -> WorkerContext:
         stage = self._stage_register.start_new_stage(name="sentiment-analysis", input=ctx)
@@ -103,6 +103,7 @@ class Pipeline:
         )
 
     def _get_prompt(self, sentiment: float, categories: list[str]) -> str:
+        # TODO: Append similar messages to prompt to ensure correct categorisation
         categories_as_str = " | ".join(cat.upper() for cat in categories)
         return f"""You are a support ticket classifier. Reply ONLY with JSON, no other text.
 
@@ -111,10 +112,24 @@ class Pipeline:
     Sentiment score: {sentiment} (range -1.0 to 1.0, negative is bad)
 
     Flag urgency_flag as true if messages contain: legal threats, fraud, chargeback, sarcasm, extreme distress, or account compromise. Set urgency_reason to one sentence explaining why if urgency_flag should be set to true.
-    Ensure suggested response is in a professional and customer service tone, is it a required field.
+    Ensure suggested response is in a professional and customer service tone.
+    category, suggested_response and priority are required. Urgency reason is only required is urgency_flag should be set to true.
     {{"category":"","priority":"","suggested_response":"","urgency_flag":false,"urgency_reason":""}}
     """
 
+    def _hash_prompt(self, prompt: str) -> str:
+        return hashlib.md5(prompt.encode('utf-8')).hexdigest()
+    
+    def _store_classification_result(self, prompt: str,  classification: "ClassificationJson"):    
+        key = self._hash_prompt(prompt)
+        self._cache.set(key, json.dumps(classification), 1 * 60 * 10)
+
+    def _get_stored_classification_result(self, prompt: str) -> "ClassificationJson" | None:
+        entry = self._cache.get(self._hash_prompt(prompt))
+        if entry is None:
+            return None
+        return ClassificationJson(**json.loads(entry))
+        
     async def _get_llm_classification(self, ctx: WorkerContext) -> ClassificationJson:
         stage = self._stage_register.start_new_stage(name="llm-classification", input=ctx)
         logger.info(
@@ -125,11 +140,31 @@ class Pipeline:
             },
         )
         system_prompt = self._get_prompt(ctx.average_sentiment, categories=CATEGORIES)
+        cached_result = self._get_stored_classification_result(system_prompt)
+
+        if cached_result is not None:
+             duration_ms = stage.complete(cached_result)
+             logger.info(
+            "Cache HIT Finished LLM ticket classification in %sms",
+            duration_ms,
+            extra={
+                "ticket_id": ctx.ticket.id,
+                "category": cached_result.get("category"),
+                "priority": cached_result.get("priority"),
+                "requires_urgency": cached_result.get("urgency_flag"),
+                "duration_ms": duration_ms,
+            }
+             )
+             return cached_result
+        
+        logger.info("Cache MISS starting manual classification")
         messages = ctx.ticket.messages
         last_msgs = " | ".join(msg.content for msg in messages[-3:])
         classification_result: ClassificationJson = json.loads(
             await self._integrations.llm.prompt(system_prompt, last_msgs)
         )
+        # store classification result
+        self._store_classification_result(system_prompt, classification_result)
         duration_ms = stage.complete(classification_result)
         logger.info(
             "Finished LLM ticket classification in %sms",
@@ -145,10 +180,12 @@ class Pipeline:
 
         return classification_result
 
-    async def _run_classifications(self, ctx: WorkerContext) -> WorkerContext:
+    async def _run_classifications(self, ctx: WorkerContext, attempt = 0) -> WorkerContext:
         stage = self._stage_register.start_new_stage(name="classifcations", input=ctx)
         classification = await self._get_llm_classification(ctx)
-
+        if len(classification.get('category')) == 0 and attempt + 1 <= 3:
+            await self._run_classifications(ctx, attempt=attempt + 1)
+            return
         ctx.category = classification.get("category")
         ctx.priority = classification.get("priority")
         ctx.suggested_response = classification.get("suggested_response")
@@ -176,7 +213,7 @@ class Pipeline:
         try:
             self._sentiment_per_message(ctx)
             await self._run_classifications(ctx)
-        except Exception:
+        except Exception as e:
             elapsed = stage.complete(output=ctx)
             logger.exception(
                 "Ticket pipeline failed after %sms",
@@ -186,7 +223,7 @@ class Pipeline:
                     "duration_ms": elapsed,
                 },
             )
-            raise
+            raise PipelineException(ctx=ctx, message="Failed to run pipeline")
         elapsed = stage.complete(ctx)
         logger.info(
             "Finished ticket pipeline in %sms",

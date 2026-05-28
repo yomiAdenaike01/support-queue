@@ -1,15 +1,26 @@
 import asyncio
+import os
+from pathlib import Path
+from dotenv import load_dotenv
 from logging import getLogger
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypedDict
 from .event_bus import EventBus
-from .pipeline import Pipeline
-from .team import TeamRepository
+from .pipeline import Pipeline, PipelineException
 from .integrations import Integrations
 from .logging import configure_logging
 from .repositories import TicketRepository
+from .config import create_config
 
 if TYPE_CHECKING:
     from .pipeline import WorkerContext
+
+class WorkerResult(TypedDict):
+    suggested_response: str
+    average_sentiment: float
+    priority: str
+    category: str
+    requires_urgency: bool
+    urgency_reason: str  
 
 logger = getLogger(__name__)
 
@@ -37,11 +48,13 @@ async def health_check(base_url: str):
                 
         return False      
 
-    
+
+
 async def init_worker():
-    base_url = "http://localhost:2342/api/v1"
+    config = create_config()
+
+    base_url = config.get("BASE_URL")
     ticket_repo_url = f"{base_url}/ticket"
-    team_repo_url = f"{base_url}/team"
     event_bus_url = "redis://localhost:6379"
 
     configure_logging()
@@ -49,12 +62,14 @@ async def init_worker():
     await health_check(base_url)
     
     ticket_repository = TicketRepository(base_url=ticket_repo_url)
-    team_repository = TeamRepository(base_url=team_repo_url)
     
     event_bus = EventBus(url=event_bus_url)
     event_bus.connect()
     integrations = Integrations()
-    pipeline = Pipeline(team_repository,integrations)
+    pipeline = Pipeline(integrations, cache=event_bus.get_cache())
+
+    MAX_ATTEMPTS = int(config.get("MAX_ATTEMPTS"))
+    queue = []
     while True:
         event = event_bus.await_new_event()
         if event is None: 
@@ -65,22 +80,39 @@ async def init_worker():
                 
                 if ticket_id is None:
                     continue
-                
+                queue.append(ticket_id)
                 ticket = await ticket_repository.find_by_id(ticket_id)
 
                 if ticket is None:
                     continue
-                
-                pipeline_result = await pipeline.run(ticket)
-                await post_pipeline_result(base_url, pipeline_result)
-                
+            for attempt in range(MAX_ATTEMPTS):
+                try:
+                    logger.info("================ PIPELINE ATTEMPT %d =================", attempt)
+                    pipeline_result = await pipeline.run(ticket)
+                    event_bus.register_completion(ticket_id=ticket.id)
+                    await post_pipeline_result(base_url, WorkerResult(
+                        average_sentiment=pipeline_result.average_sentiment,
+                        suggested_response=pipeline_result.suggested_response,
+                        priority=pipeline_result.priority,
+                        category=pipeline_result.category,
+                        requires_urgency=pipeline_result.requires_urgency,
+                        urgency_reason=pipeline_result.urgency_reason
+                    ))
+                    break
+                except Exception as e:
+                    logger.exception("Failed attempt reason=%s", str(e))
+                    continue
+              
     
-async def post_pipeline_result(base_url: str, ctx: "WorkerContext"):
+async def post_pipeline_result(base_url: str, worker_result: "WorkerResult"):
     from httpx import AsyncClient
-    async with AsyncClient() as http:
-        url = f"{base_url}/ml"
-        response = await http.post(url, json=ctx)
-        response.raise_for_status()
+    try:
+        async with AsyncClient() as http:
+            url = f"{base_url}/worker"
+            response = await http.post(url, json=worker_result)
+            response.raise_for_status()
+    except:
+        raise
 
 if __name__ == "__main__":
     import uvloop

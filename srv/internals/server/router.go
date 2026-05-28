@@ -29,7 +29,7 @@ func NewRouter(deps RouterDependencies) *gin.Engine {
 	})
 	teamRepository := teamdomain.NewRepository(deps.DB)
 	teamHandler := teamdomain.NewHandler(teamRepository)
-	workerHandler := workerdomain.NewHandler(deps.Integrations, teamRepository)
+	workerHandler := workerdomain.NewHandler(deps.Context, deps.Integrations, teamRepository)
 	integrationsHandler := integrationsdomain.NewHandler(deps.Integrations)
 
 	integrationsHandler.RegisterRoutes(v1.Group("/integrations"))

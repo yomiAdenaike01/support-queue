@@ -24,7 +24,10 @@ class EventBus:
             count=1,
             block=5000,  # wait up to 5 seconds for a message
         )
-
+    
+    def get_cache(self) -> "Redis":
+        return self._cache
+    
     def register_completion(self, ticket_id: str):
         try:
             self._cache.xack(ticket_id)
