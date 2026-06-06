@@ -10,21 +10,35 @@ import (
 	"github.com/gin-gonic/gin"
 	integrationsdomain "github.com/yomiAdenaike01/support-queue/internals/domains/integrations"
 	teamdomain "github.com/yomiAdenaike01/support-queue/internals/domains/team"
+	"github.com/yomiAdenaike01/support-queue/internals/domains/ticket"
 )
 
 type Handler struct {
-	context         context.Context
-	integrations    *integrationsdomain.Integrations
-	teamsRepository *teamdomain.Repository
+	context          context.Context
+	integrations     *integrationsdomain.Integrations
+	teamsRepository  *teamdomain.Repository
+	ticketRepository *ticket.Repository
 }
 
 type WorkerResult struct {
+	TicketId          string  `json:"ticket_id"`
 	SuggestedResponse string  `json:"suggested_response"`
 	AverageSentiment  float32 `json:"average_sentiment"`
 	Priority          string  `json:"priority"`
 	Category          string  `json:"category"`
 	RequiresUrgency   bool    `json:"requires_urgency"`
 	UrgencyReason     string  `json:"urgency_reason"`
+}
+
+func workerResultToUpdateInput(workerResult WorkerResult) ticket.UpdateTicketInput {
+	return ticket.UpdateTicketInput{
+		SuggestedResponse: &workerResult.SuggestedResponse,
+		Category:          &workerResult.Category,
+		RequiresUrgency:   &workerResult.RequiresUrgency,
+		UrgencyReason:     &workerResult.UrgencyReason,
+		AverageSentiment:  &workerResult.AverageSentiment,
+		Priority:          &workerResult.Priority,
+	}
 }
 
 func (w *Handler) completeWork(ctx *gin.Context) {
@@ -35,6 +49,13 @@ func (w *Handler) completeWork(ctx *gin.Context) {
 			"error": err.Error(),
 		})
 		return
+	}
+
+	err := w.ticketRepository.FindAndUpdate(ctx.Request.Context(), workerResult.TicketId, workerResultToUpdateInput(workerResult))
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
 	}
 	log.Printf(
 		"Received worker result category=%s priority=%s requires_urgency=%t average_sentiment=%.2f",
@@ -148,10 +169,11 @@ func fromCategoryToDepartments(category string) []string {
 	return teams
 }
 
-func NewHandler(context context.Context, integrations *integrationsdomain.Integrations, teamRepository *teamdomain.Repository) *Handler {
+func NewHandler(context context.Context, integrations *integrationsdomain.Integrations, teamRepository *teamdomain.Repository, ticketRepository *ticket.Repository) *Handler {
 	return &Handler{
-		context:         context,
-		integrations:    integrations,
-		teamsRepository: teamRepository,
+		context:          context,
+		integrations:     integrations,
+		teamsRepository:  teamRepository,
+		ticketRepository: ticketRepository,
 	}
 }

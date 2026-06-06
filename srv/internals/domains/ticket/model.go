@@ -1,6 +1,32 @@
 package ticket
 
-import "database/sql"
+import (
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"time"
+)
+
+type TicketEvent struct {
+	EventType string          `json:"eventType"`
+	CreatedAt string          `json:"createdAt"`
+	Payload   json.RawMessage `json:"payload"`
+}
+
+type TicketEvents []TicketEvent
+
+func (t *TicketEvents) Scan(value interface{}) error {
+	if value == nil {
+		*t = TicketEvents{}
+		return nil
+	}
+	bytes, ok := value.([]byte)
+
+	if !ok {
+		return fmt.Errorf("Failed to cast value to []byte")
+	}
+	return json.Unmarshal(bytes, t)
+}
 
 type DbCreateTicketResult struct {
 	TicketId       string `db:"ticket_id"`
@@ -44,17 +70,21 @@ type DbFindTicketByIdRow struct {
 	MessageId         sql.NullString `db:"message_id"`
 	MessageContent    sql.NullString `db:"message_content"`
 	MessageRole       sql.NullString `db:"message_role"`
+	Events            TicketEvents   `db:"events"`
+	CreatedAt         sql.NullTime   `db:"created_at"`
 }
 
 type TicketResponse struct {
 	Id                string            `json:"id"`
-	CustomerEmail     string            `json:"customer_email"`
+	CustomerEmail     string            `json:"customerEmail"`
 	Subject           string            `json:"subject"`
 	Status            string            `json:"status"`
 	Priority          *string           `json:"priority,omitempty"`
 	Category          *string           `json:"category,omitempty"`
-	AssignedTeam      *string           `json:"assigned_team,omitempty"`
-	SuggestedResponse *string           `json:"suggested_response,omitempty"`
-	Messages          []MessageResponse `json:"messages"`
+	AssignedTeam      *string           `json:"assignedTeam,omitempty"`
+	SuggestedResponse *string           `json:"suggestedResponse,omitempty"`
+	Messages          []MessageResponse `json:"messages,omitempty"`
 	Pk                int               `json:"-"`
+	Events            TicketEvents      `json:"events,omitempty"`
+	CreatedAt         *time.Time        `json:"createdAt"`
 }

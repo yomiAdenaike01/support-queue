@@ -15,7 +15,14 @@ class EventBus:
 
     def __init__(self, url: str):
         self._url = url
-
+    def await_resolved_ticket(self):
+        return self._cache.xreadgroup(
+            consumername='python-worker-1',
+            groupname="TICKET_WORKERS",
+            streams={"RESOVLED_TICKETS": ">"},
+            count=1,
+            block=5000
+        )
     def await_new_event(self):
         return self._cache.xreadgroup(
             groupname="TICKET_WORKERS",
@@ -28,7 +35,7 @@ class EventBus:
     def get_cache(self) -> "Redis":
         return self._cache
     
-    def register_completion(self, ticket_id: str):
+    def ack_classification_complete(self, ticket_id: str):
         try:
             self._cache.xack(ticket_id)
         except Exception:

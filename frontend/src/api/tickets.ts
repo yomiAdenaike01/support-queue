@@ -10,23 +10,23 @@ export interface CreateTicketInput {
 }
 
 export async function getTickets(filters: TicketFilters = {}): Promise<Ticket[]> {
-  if (USE_MOCK) {
-    const search = filters.search?.toLowerCase().trim();
-    return mockDelay(
-      mockTickets.filter((ticket) => {
-        const matchesStatus = !filters.status || filters.status === "ALL" || ticket.status === filters.status;
-        const matchesPriority = !filters.priority || filters.priority === "ALL" || ticket.priority === filters.priority;
-        const matchesCategory = !filters.category || filters.category === "ALL" || ticket.category === filters.category;
-        const matchesSearch =
-          !search ||
-          ticket.subject.toLowerCase().includes(search) ||
-          ticket.customerEmail.toLowerCase().includes(search) ||
-          ticket.id.toLowerCase().includes(search);
-        return matchesStatus && matchesPriority && matchesCategory && matchesSearch;
-      }),
-    );
-  }
-  const { data } = await api.get<Ticket[]>("/api/tickets", { params: filters });
+  // if (USE_MOCK) {
+  //   const search = filters.search?.toLowerCase().trim();
+  //   return mockDelay(
+  //     mockTickets.filter((ticket) => {
+  //       const matchesStatus = !filters.status || filters.status === "ALL" || ticket.status === filters.status;
+  //       const matchesPriority = !filters.priority || filters.priority === "ALL" || ticket.priority === filters.priority;
+  //       const matchesCategory = !filters.category || filters.category === "ALL" || ticket.category === filters.category;
+  //       const matchesSearch =
+  //         !search ||
+  //         ticket.subject.toLowerCase().includes(search) ||
+  //         ticket.customerEmail.toLowerCase().includes(search) ||
+  //         ticket.id.toLowerCase().includes(search);
+  //       return matchesStatus && matchesPriority && matchesCategory && matchesSearch;
+  //     }),
+  //   );
+  // }
+  const { data } = await api.get<Ticket[]>("/tickets", { params: filters });
   return data;
 }
 
@@ -36,13 +36,13 @@ export async function getTicket(id: string): Promise<Ticket> {
     if (!ticket) throw new Error("Ticket not found");
     return mockDelay(ticket);
   }
-  const { data } = await api.get<Ticket>(`/api/tickets/${id}`);
+  const { data } = await api.get<Ticket>(`/tickets/${id}`);
   return data;
 }
 
 export async function getTicketEvents(id: string): Promise<TicketEvent[]> {
   if (USE_MOCK) return mockDelay(mockEvents.filter((event) => event.ticketId === id));
-  const { data } = await api.get<TicketEvent[]>(`/api/tickets/${id}/events`);
+  const { data } = await api.get<TicketEvent[]>(`/tickets/${id}/events`);
   return data;
 }
 
@@ -72,7 +72,7 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
     mockTickets.unshift(ticket);
     return mockDelay(ticket);
   }
-  const { data } = await api.post<Ticket>("/api/tickets", input);
+  const { data } = await api.post<Ticket>("/tickets", input);
   return data;
 }
 
@@ -83,7 +83,7 @@ export async function reprocessTicket(id: string): Promise<Ticket> {
     ticket.retryCount += 1;
     return mockDelay(ticket);
   }
-  const { data } = await api.post<Ticket>(`/api/tickets/${id}/reprocess`);
+  const { data } = await api.post<Ticket>(`/tickets/${id}/reprocess`);
   return data;
 }
 
@@ -94,6 +94,6 @@ export async function resolveTicket(id: string): Promise<Ticket> {
     ticket.updatedAt = new Date().toISOString();
     return mockDelay(ticket);
   }
-  const { data } = await api.post<Ticket>(`/api/tickets/${id}/resolve`);
+  const { data } = await api.post<Ticket>(`/tickets/${id}/resolve`);
   return data;
 }

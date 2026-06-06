@@ -18,7 +18,7 @@ export interface InviteMemberInput {
 
 export async function getTeams(): Promise<Team[]> {
   if (USE_MOCK) return mockDelay(mockTeams);
-  const { data } = await api.get<Team[]>("/api/teams");
+  const { data } = await api.get<Team[]>("/teams");
   return data;
 }
 
@@ -28,7 +28,7 @@ export async function getTeam(id: string): Promise<Team> {
     if (!team) throw new Error("Team not found");
     return mockDelay(team);
   }
-  const { data } = await api.get<Team>(`/api/teams/${id}`);
+  const { data } = await api.get<Team>(`/teams/${id}`);
   return data;
 }
 
@@ -44,13 +44,13 @@ export async function createTeam(input: CreateTeamPayload): Promise<Team> {
     mockTeams.push(team);
     return mockDelay(team);
   }
-  const { data } = await api.post<Team>("/api/teams", input);
+  const { data } = await api.post<Team>("/teams", input);
   return data;
 }
 
 export async function deleteTeam(id: string): Promise<{ deleted: boolean }> {
   if (USE_MOCK) return mockDelay({ deleted: true });
-  const { data } = await api.delete<{ deleted: boolean }>(`/api/teams/${id}`);
+  const { data } = await api.delete<{ deleted: boolean }>(`/teams/${id}`);
   return data;
 }
 
@@ -82,7 +82,7 @@ export async function inviteMember(teamId: string, input: InviteMemberInput): Pr
     team?.members.push(member);
     return mockDelay(invite);
   }
-  const { data } = await api.post<MemberInvite>(`/api/teams/${teamId}/invites`, input);
+  const { data } = await api.post<MemberInvite>(`/teams/${teamId}/invites`, input);
   return data;
 }
 
@@ -91,25 +91,25 @@ export async function resendInvite(teamId: string, inviteId: string): Promise<Me
     const invite = mockInvites.find((item) => item.id === inviteId) ?? mockInvites[0];
     return mockDelay({ ...invite, teamId, invitedAt: new Date().toISOString(), status: "pending" });
   }
-  const { data } = await api.post<MemberInvite>(`/api/teams/${teamId}/invites/${inviteId}/resend`);
+  const { data } = await api.post<MemberInvite>(`/teams/${teamId}/invites/${inviteId}/resend`);
   return data;
 }
 
 export async function getSlackChannels(teamId: string): Promise<SlackChannel[]> {
   if (USE_MOCK) return mockDelay(mockSlackChannels);
-  const { data } = await api.get<SlackChannel[]>("/api/integrations/slack/channels", { params: { team_id: teamId } });
+  const { data } = await api.get<SlackChannel[]>("/integrations/slack/channels", { params: { team_id: teamId } });
   return data;
 }
 
 export async function getTeamsChannels(teamId: string): Promise<TeamsChannel[]> {
   if (USE_MOCK) return mockDelay(mockTeamsChannels);
-  const { data } = await api.get<TeamsChannel[]>("/api/integrations/teams/teams-list", { params: { team_id: teamId } });
+  const { data } = await api.get<TeamsChannel[]>("/integrations/teams/teams-list", { params: { team_id: teamId } });
   return data;
 }
 
 export async function testIntegration(teamId: string, provider: "slack" | "teams"): Promise<{ success: boolean }> {
   if (USE_MOCK) return mockDelay({ success: true });
-  const { data } = await api.post<{ success: boolean }>(`/api/integrations/${provider}/test`, undefined, {
+  const { data } = await api.post<{ success: boolean }>(`/integrations/${provider}/test`, undefined, {
     params: { team_id: teamId },
   });
   return data;

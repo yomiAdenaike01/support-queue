@@ -1,10 +1,14 @@
 import logging
+import json
 from dataclasses import dataclass
 from time import perf_counter
 from ..utils import Timer
 from httpx import AsyncClient
-
+from typing import TYPE_CHECKING
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from redis import Redis
 
 
 @dataclass
@@ -30,11 +34,21 @@ class IntegrationOptions:
 
 
 class LLMIntegration:
-    _options: IntegrationOptions
+    _options: "IntegrationOptions"
+    _cache: "Redis"
 
-    def __init__(self, options: IntegrationOptions):
+    def __init__(self, cache: "Redis", options: "IntegrationOptions"):
         self._options = options
+        self._cache = cache
 
+    def _hash(self, prompt_body: str):
+        from hashlib import md5
+        return md5(prompt_body.encode('utf-8')).hexdigest()
+
+    def _get_cached_response(self, body_str: str) -> str:
+        hash = self._hash(body_str)
+        return self._cache.get(hash)
+    
     async def prompt(self, system_prompt: str, prompt: str, timer = None):
         url = f"{self._options.base_url}/chat/completions"
         body = {
@@ -44,10 +58,14 @@ class LLMIntegration:
                 {"role": "user", "content": prompt},
             ],
         }
+        body_str = json.dumps(body)
+        cached_response = self._get_cached_response(body_str)
+
+        if cached_response is not None:
+            return cached_response 
         timer = Timer() if timer is None else timer
-        import json
         logger.info(
-            f"Sending LLM prompt - {json.dumps(body)}",
+            f"Sending LLM prompt - {body_str}",
             extra={
                 "base_url": self._options.base_url,
                 "model": body["model"],
@@ -72,6 +90,9 @@ class LLMIntegration:
                 response.raise_for_status()
                 data = response.json()
                 content = data["choices"][0]["message"]["content"]
+                
+                self._cache.set(self._hash(body_str), content)
+
                 logger.info(f"LLM Response: {content}")
                 logger.info(
                     "Parsed LLM response in %sms",

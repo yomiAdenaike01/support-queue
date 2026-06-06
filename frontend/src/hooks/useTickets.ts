@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createTicket, getTicket, getTicketEvents, getTickets, reprocessTicket, resolveTicket } from "@/api/tickets";
-import type { TicketFilters } from "@/types";
+import type { Ticket, TicketFilters } from "@/types";
 
 export function useTickets(filters: TicketFilters = {}) {
   return useQuery({ queryKey: ["tickets", filters], queryFn: () => getTickets(filters), staleTime: 15_000 });
@@ -11,7 +11,9 @@ export function useTicket(id: string) {
 }
 
 export function useTicketEvents(id: string) {
-  return useQuery({ queryKey: ["ticket-events", id], queryFn: () => getTicketEvents(id), enabled: Boolean(id) });
+  const client = useQueryClient()
+  const ticketData = client.getQueryData<Ticket>(['ticket', id])
+  return { data: ticketData?.events || [] }
 }
 
 export function useTicketMutations() {

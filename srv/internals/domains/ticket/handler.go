@@ -2,6 +2,7 @@ package ticket
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -13,25 +14,93 @@ import (
 )
 
 type Handler struct {
-	db           *sqlx.DB
 	repository   *Repository
 	streamClient *redisinfra.StreamClient
 	ctx          context.Context
 }
 
-func NewHandler(ctx context.Context, db *sqlx.DB, streamClient *redisinfra.StreamClient) *Handler {
+func NewHandler(ctx context.Context, db *sqlx.DB, streamClient *redisinfra.StreamClient, repository *Repository) *Handler {
 	return &Handler{
-		db:           db,
-		repository:   NewRepository(db),
+		repository:   repository,
 		streamClient: streamClient,
 		ctx:          ctx,
 	}
 }
 
 func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
-	group.POST("/ticket", h.create)
-	group.GET("/ticket/:id", h.findById)
-	group.POST("/ticket/:id/message", h.insertMessage)
+	group.POST("/tickets", h.create)
+	group.GET("/tickets/:id", h.findById)
+	group.GET("/tickets", h.find)
+	group.POST("/tickets/:id/message", h.insertMessage)
+	group.POST("/tickets/:id/events", h.addEvent)
+}
+
+type AddEventParam struct {
+	Id string `uri:"id" binding:"required"`
+}
+
+func (h *Handler) addEvent(ctx *gin.Context) {
+	var params AddEventParam
+	if err := ctx.ShouldBindUri(&params); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+	}
+	var addEventBody CreateEventInput
+	if err := ctx.ShouldBindBodyWithJSON(&addEventBody); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+	}
+
+	addEventBody.TicketId = params.Id
+
+	event, err := h.repository.CreateEvent(addEventBody)
+	if err != nil {
+		if errors.Is(err, ErrDuplicateTicketEvent) {
+			ctx.JSON(http.StatusConflict, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, event)
+}
+func (h *Handler) find(ctx *gin.Context) {
+	search := ctx.Query("search")
+	status := ctx.Query("status")
+	priority := ctx.Query("priority")
+	category := ctx.Query("category")
+	limit := ctx.Query("limit")
+
+	limitint, err := strconv.Atoi(limit)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	response, err := h.repository.Find(ctx, FindFilters{
+		Search:   search,
+		Status:   status,
+		Priority: priority,
+		Category: category,
+		Limit:    limitint,
+	})
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (h *Handler) pushToStream(ticketId string, message string) error {

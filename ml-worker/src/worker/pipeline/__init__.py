@@ -1,4 +1,5 @@
-from .pipeline import Pipeline, WorkerContext, PipelineException
+from .classification_pipeline import ClassificationPipeline, WorkerContext, PipelineException
+from .resolution_pipeline import ResolutionPipeline
 from .pipeline_stage import Timer
 
-__all__ = ["Pipeline", "Timer","WorkerContext","PipelineException"]
+__all__ = ["ClassificationPipeline", "Timer","WorkerContext","PipelineException","ResolutionPipeline"]

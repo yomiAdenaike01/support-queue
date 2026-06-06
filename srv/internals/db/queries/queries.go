@@ -22,3 +22,15 @@ var SEARCH_TEAM_QUERY string
 
 //go:embed update_team.sql
 var UPDATE_TEAM_QUERY string
+
+//go:embed dashboard_summary.sql
+var DASHBOARD_SUMMARY string
+
+//go:embed find_tickets.sql
+var FIND_TICKETS string
+
+//go:embed insert_ticket_event.sql
+var INSERT_TICKET_EVENT string
+
+//go:embed insert_knowledgebase.sql
+var INSERT_KNOWLEDGE_BASE string

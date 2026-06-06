@@ -1,4 +1,5 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "vector";
 
 -- TICKETS
 CREATE TABLE IF NOT EXISTS tickets (
@@ -83,6 +84,7 @@ CREATE INDEX IF NOT EXISTS idx_events_ticket_pk ON ticket_events(ticket_pk);
 CREATE INDEX IF NOT EXISTS idx_events_ticket_id ON ticket_events(ticket_id);
 CREATE INDEX IF NOT EXISTS idx_events_created_at ON ticket_events(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_events_payload ON ticket_events USING GIN(payload);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_events_ticket_id_event_type_unique ON ticket_events(ticket_id, event_type);
 
 -- WORKER STATUS
 CREATE TABLE IF NOT EXISTS worker_status (
@@ -149,4 +151,13 @@ CREATE TABLE IF NOT EXISTS team_members (
 
 CREATE INDEX IF NOT EXISTS idx_team_member_email ON team_members(email_address);
 CREATE INDEX IF NOT EXISTS idx_team_member_phonenumber ON team_members(phone_number);
-
+CREATE TABLE IF NOT EXISTS knowledge_base(
+    id uuid NOT NULL UNIQUE DEFAULT uuid_generate_v4(),
+    pk SERIAL PRIMARY KEY,
+    source_id UUID NOT NULL,
+    metadata jsonb DEFAULT NULL,
+    embedding vector(384) NOT NULL,
+    source_type TEXT DEFAULT NULL,
+    content TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_knowledge_base_source_id ON knowledge_base(source_id);

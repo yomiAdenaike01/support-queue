@@ -4,6 +4,6 @@ import type { Worker } from "@/types";
 
 export async function getWorkers(): Promise<Worker[]> {
   if (USE_MOCK) return mockDelay(mockWorkers.map((worker) => ({ ...worker, lastHeartbeat: new Date().toISOString() })));
-  const { data } = await api.get<Worker[]>("/api/workers");
+  const { data } = await api.get<Worker[]>("/workers");
   return data;
 }

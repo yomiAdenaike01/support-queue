@@ -37,19 +37,20 @@ export interface Ticket {
   createdAt: string;
   updatedAt: string | null;
   processedAt: string | null;
+  events: TicketEvent[]
 }
 
 export interface TicketEvent {
   id: string;
   ticketId: string;
   eventType:
-    | "TICKET_CREATED"
-    | "TICKET_PROCESSING"
-    | "TICKET_CLASSIFIED"
-    | "TICKET_PROCESSED"
-    | "TICKET_FAILED"
-    | "TICKET_REPROCESSED"
-    | "TICKET_RESOLVED";
+  | "TICKET_CREATED"
+  | "TICKET_PROCESSING"
+  | "TICKET_CLASSIFIED"
+  | "TICKET_PROCESSED"
+  | "TICKET_FAILED"
+  | "TICKET_REPROCESSED"
+  | "TICKET_RESOLVED";
   payload: Record<string, unknown> | null;
   createdAt: string;
 }
@@ -63,16 +64,22 @@ export interface Worker {
   lastHeartbeat: string;
 }
 
+type Metric = {
+  today: number
+  yesterday: number
+  percentageDifference: number
+}
+
 export interface Metrics {
-  totalTickets: number;
-  pendingTickets: number;
-  processingTickets: number;
-  processedTickets: number;
-  failedTickets: number;
-  resolvedTickets: number;
-  averageProcessingTimeMs: number;
-  streamPendingMessages: number;
-  deadLetterCount: number;
+  totalTickets: Metric;
+  pendingTickets: Metric;
+  processingTickets: Metric;
+  processedTickets: Metric;
+  failedTickets: Metric;
+  resolvedTickets: Metric;
+  averageProcessingTimeMs: Metric;
+  streamPendingMessages: Metric;
+  deadLetterCount: Metric;
 }
 
 export interface StreamStats {

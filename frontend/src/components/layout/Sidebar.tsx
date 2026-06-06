@@ -1,4 +1,11 @@
-import { LayoutDashboard, Play, Plus, Settings, Ticket, Users } from "lucide-react";
+import {
+  LayoutDashboard,
+  Play,
+  Plus,
+  Settings,
+  Ticket,
+  Users,
+} from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useMetrics } from "@/hooks/useMetrics";
 
@@ -16,8 +23,12 @@ export function Sidebar() {
   return (
     <aside className="fixed inset-y-0 left-0 z-40 flex w-20 flex-col border-r border-slate-800 bg-surface px-3 py-5 lg:w-64">
       <div className="mb-8 flex items-center gap-3 px-2">
-        <div className="grid h-10 w-10 place-items-center rounded-lg bg-accent font-mono font-bold">SO</div>
-        <span className="hidden text-lg font-semibold lg:block">SupportOps</span>
+        <div className="grid h-10 w-10 place-items-center rounded-lg bg-accent font-mono font-bold">
+          SO
+        </div>
+        <span className="hidden text-lg font-semibold lg:block">
+          SupportOps
+        </span>
       </div>
       <nav className="space-y-1">
         {navItems.map((item) => {
@@ -29,7 +40,9 @@ export function Sidebar() {
               end={item.to === "/"}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-                  isActive ? "bg-accent text-white" : "text-slate-400 hover:bg-surface-2 hover:text-white"
+                  isActive
+                    ? "bg-accent text-white"
+                    : "text-slate-400 hover:bg-surface-2 hover:text-white"
                 }`
               }
             >
@@ -37,7 +50,7 @@ export function Sidebar() {
               <span className="hidden lg:block">{item.label}</span>
               {item.to === "/tickets" && data ? (
                 <span className="ml-auto hidden rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-200 lg:block">
-                  {data.pendingTickets}
+                  {data.pendingTickets.today}
                 </span>
               ) : null}
             </NavLink>

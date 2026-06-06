@@ -1,0 +1,514 @@
+-- PostgreSQL pgvector + Indexes Practice
+--
+-- This file is for writing practice answers, not running setup.
+-- The tables below are shown as plain reference data so you can see what you
+-- are querying.
+
+-- ============================================================
+-- Table: practice_tickets
+-- ============================================================
+--
+-- Columns:
+--   id              integer
+--   customer_email  text
+--   subject         text
+--   category        text
+--   priority        text
+--   status          text
+--   created_at      timestamptz
+--   payload         jsonb
+--
+-- Data:
+--
+-- | id | customer_email  | subject                              | category       | priority | status     | created_at              | payload                                |
+-- |----|-----------------|--------------------------------------|----------------|----------|------------|-------------------------|----------------------------------------|
+-- | 1  | ava@example.com | Cannot log in after password reset   | ACCOUNT_ACCESS | HIGH     | PENDING    | 2026-05-28 09:15:00+00 | {"source":"email","plan":"pro"}      |
+-- | 2  | ben@example.com | Charged twice for subscription       | BILLING        | URGENT   | PROCESSING | 2026-05-29 11:20:00+00 | {"source":"chat","plan":"business"}  |
+-- | 3  | cam@example.com | Package has not arrived              | DELIVERY       | MEDIUM   | PENDING    | 2026-05-30 14:05:00+00 | {"source":"email","plan":"starter"}   |
+-- | 4  | dia@example.com | API returns 500 on upload            | TECHNICAL      | HIGH     | PROCESSED  | 2026-05-31 16:40:00+00 | {"source":"api","plan":"business"}   |
+-- | 5  | eli@example.com | Cancel my account today              | CANCELLATION   | LOW      | RESOLVED   | 2026-06-01 08:45:00+00 | {"source":"chat","plan":"starter"}   |
+-- | 6  | fay@example.com | Invoice address needs updating       | BILLING        | LOW      | PENDING    | 2026-06-01 13:10:00+00 | {"source":"email","plan":"pro"}      |
+-- | 7  | gus@example.com | 2FA code never arrives               | ACCOUNT_ACCESS | URGENT   | PROCESSING | 2026-06-02 10:00:00+00 | {"source":"chat","plan":"business"}  |
+-- | 8  | hal@example.com | Tracking says delivered but nothing came | DELIVERY   | HIGH     | PENDING    | 2026-06-02 18:30:00+00 | {"source":"email","plan":"pro"}      |
+
+-- ============================================================
+-- Table: practice_ticket_chunks
+-- ============================================================
+--
+-- Columns:
+--   id          integer
+--   ticket_id   integer, references practice_tickets(id)
+--   chunk_text  text
+--   embedding   vector(3)
+--
+-- Data:
+--
+-- | id | ticket_id | chunk_text                                             | embedding        |
+-- |----|-----------|--------------------------------------------------------|------------------|
+-- | 1  | 1         | Customer cannot log in after resetting password.       | [0.95,0.08,0.05] |
+-- | 2  | 1         | Password reset link completed but session still rejected. | [0.90,0.12,0.08] |
+-- | 3  | 2         | Customer was charged twice for the same subscription period. | [0.08,0.96,0.03] |
+-- | 4  | 2         | Duplicate invoice appears on account billing page.     | [0.10,0.92,0.05] |
+-- | 5  | 3         | Order has not arrived and tracking has not moved.      | [0.05,0.12,0.94] |
+-- | 6  | 3         | Customer asks for delivery status on missing package.  | [0.04,0.16,0.90] |
+-- | 7  | 4         | Upload endpoint returns HTTP 500 for large files.      | [0.62,0.08,0.70] |
+-- | 8  | 4         | API failure happens during document upload.            | [0.58,0.12,0.72] |
+-- | 9  | 5         | Customer wants to cancel the account immediately.      | [0.55,0.62,0.08] |
+-- | 10 | 5         | Cancellation request with no refund question.          | [0.50,0.67,0.07] |
+-- | 11 | 6         | Customer needs to change invoice billing address.      | [0.12,0.89,0.15] |
+-- | 12 | 6         | Billing contact and address are incorrect on invoice.  | [0.10,0.91,0.14] |
+-- | 13 | 7         | Two factor authentication code never arrives.          | [0.91,0.10,0.12] |
+-- | 14 | 7         | Customer cannot access account because OTP is missing. | [0.88,0.11,0.16] |
+-- | 15 | 8         | Tracking says delivered but customer has no package.   | [0.06,0.14,0.93] |
+-- | 16 | 8         | Delivery marked complete but parcel is missing.        | [0.08,0.11,0.95] |
+
+-- ============================================================
+-- Notes: What Vector Search Is Actually Doing
+-- ============================================================
+--
+-- An embedding is a point in space.
+--
+-- In this practice file each embedding has 3 numbers, so you can imagine a
+-- 3D point:
+--
+--   [0.95,0.08,0.05]
+--
+-- Real embeddings have many more dimensions, for example 384, 768, 1536, or
+-- 3072 numbers. The idea is the same: each text chunk becomes a point.
+--
+-- Semantic search means:
+--
+--   1. Turn the user's search text into a query vector.
+--   2. Compare that query vector against stored embedding vectors.
+--   3. Sort by closeness.
+--   4. Return the closest rows.
+--
+-- The database does not understand English directly. It only compares numbers.
+-- The embedding model is what learned to place similar meanings near each
+-- other.
+
+-- ============================================================
+-- Notes: Cosine Similarity
+-- ============================================================
+--
+-- Cosine similarity compares direction, not raw size.
+--
+-- Imagine two arrows starting from zero:
+--
+--   A = [1, 0]
+--   B = [2, 0]
+--
+-- B is longer, but both point in the same direction. Cosine similarity says
+-- they are perfectly similar.
+--
+-- Formula:
+--
+--   cosine_similarity(A, B) = dot_product(A, B) / (length(A) * length(B))
+--
+-- Dot product:
+--
+--   A dot B = (A1 * B1) + (A2 * B2) + ... + (An * Bn)
+--
+-- Vector length:
+--
+--   length(A) = sqrt((A1 * A1) + (A2 * A2) + ... + (An * An))
+--
+-- Small example:
+--
+--   A = [1, 2]
+--   B = [2, 3]
+--
+--   dot_product = (1 * 2) + (2 * 3)
+--               = 2 + 6
+--               = 8
+--
+--   length(A) = sqrt((1 * 1) + (2 * 2))
+--             = sqrt(5)
+--
+--   length(B) = sqrt((2 * 2) + (3 * 3))
+--             = sqrt(13)
+--
+--   cosine_similarity = 8 / (sqrt(5) * sqrt(13))
+--
+-- Result meanings:
+--
+--   1.0   same direction
+--   0.0   unrelated direction / perpendicular
+--  -1.0   opposite direction
+--
+-- pgvector's <=> operator gives cosine distance, not cosine similarity.
+--
+--   cosine_distance = 1 - cosine_similarity
+--
+-- So:
+--
+--   similarity 1.0 becomes distance 0.0
+--   similarity 0.8 becomes distance 0.2
+--   similarity 0.2 becomes distance 0.8
+--
+-- That is why vector SQL usually sorts ascending:
+--
+--   ORDER BY embedding <=> query_vector
+--
+-- Smaller distance means more similar.
+--
+-- If you implement cosine similarity yourself one day, the rough algorithm is:
+--
+--   dot = 0
+--   len_a = 0
+--   len_b = 0
+--
+--   for each dimension i:
+--       dot += a[i] * b[i]
+--       len_a += a[i] * a[i]
+--       len_b += b[i] * b[i]
+--
+--   similarity = dot / (sqrt(len_a) * sqrt(len_b))
+--
+-- You must also handle zero-length vectors, because division by zero is
+-- invalid. Embeddings normally should not be zero vectors, but defensive code
+-- should still check.
+
+-- ============================================================
+-- Notes: Top-k Search
+-- ============================================================
+--
+-- Top-k means "return the best k results."
+--
+-- If k = 5, you want the 5 closest vectors.
+--
+-- In SQL, top-k vector search is:
+--
+--   ORDER BY distance
+--   LIMIT k
+--
+-- For pgvector cosine distance:
+--
+--   ORDER BY embedding <=> query_vector
+--   LIMIT 5
+--
+-- This is different from a threshold search.
+--
+-- Top-k:
+--   "Always give me the best 5 rows, even if the 5th one is not very close."
+--
+-- Threshold:
+--   "Only give me rows close enough, even if that returns 0 rows."
+--
+-- Many real systems use both:
+--
+--   1. Filter by tenant/status/category.
+--   2. Sort by vector distance.
+--   3. LIMIT top k.
+--   4. Optionally reject results above a max distance.
+
+-- ============================================================
+-- Notes: Other Distance Operators
+-- ============================================================
+--
+-- Euclidean / L2 distance: <->
+--
+-- This is straight-line distance between two points.
+--
+--   distance(A, B) = sqrt(
+--       (A1 - B1)^2 +
+--       (A2 - B2)^2 +
+--       ... +
+--       (An - Bn)^2
+--   )
+--
+-- Use it when actual position and magnitude matter.
+--
+-- L1 / taxicab distance: <+>
+--
+-- This adds absolute differences:
+--
+--   distance(A, B) = abs(A1 - B1) + abs(A2 - B2) + ... + abs(An - Bn)
+--
+-- It is called taxicab distance because movement is like city blocks: across,
+-- then up, not a diagonal straight line.
+--
+-- Inner product: <#>
+--
+-- Inner product is closely related to dot product. pgvector returns negative
+-- inner product because PostgreSQL indexes scan in ascending order. Smaller is
+-- still better for the operator result.
+--
+-- In simple terms:
+--
+--   larger dot product = more aligned
+--   pgvector <#> returns the negative value
+--   therefore smaller <#> result = better match
+--
+-- Practical default:
+--
+--   For text semantic search, start with cosine distance unless your embedding
+--   model documentation recommends a different metric.
+
+-- ============================================================
+-- Tiny Reference
+-- ============================================================
+--
+-- Vector distance operators:
+--   <=>   cosine distance          smaller = more similar
+--   <->   Euclidean/L2 distance    smaller = more similar
+--   <#>   negative inner product   smaller = more similar
+--
+-- Basic vector search shape:
+--   SELECT ...
+--   FROM practice_ticket_chunks
+--   ORDER BY embedding <=> '[0.1,0.2,0.3]'::vector
+--   LIMIT 5;
+--
+-- Use WHERE for filters:
+--   WHERE status IN ('PENDING', 'PROCESSING')
+
+-- ============================================================
+-- Challenge 1: Top-k Vector Search
+-- ============================================================
+--
+-- Find the 4 chunks most similar to this delivery query vector:
+--
+--   [0.06,0.13,0.94]
+--
+-- Return:
+--   chunk_id, ticket_id, chunk_text, distance
+--
+-- Rules:
+-- - Use cosine distance: <=>
+-- - Cast the query vector with ::vector.
+-- - Sort closest first.
+-- - LIMIT 4.
+--
+-- Write your answer below:
+
+
+-- ============================================================
+-- Challenge 2: Add Similarity Score
+-- ============================================================
+--
+-- Search with this account-access query vector:
+--
+--   [0.93,0.10,0.08]
+--
+-- Return:
+--   chunk_id, chunk_text, distance, similarity
+--
+-- Rules:
+-- - distance = cosine distance.
+-- - similarity = 1 - distance.
+-- - Sort by distance ascending.
+-- - LIMIT 5.
+--
+-- Write your answer below:
+
+
+-- ============================================================
+-- Challenge 3: Vector Search With WHERE
+-- ============================================================
+--
+-- Find chunks similar to account-access problems, but only for open tickets.
+--
+-- Query vector:
+--   [0.91,0.10,0.12]
+--
+-- Open statuses:
+--   PENDING, PROCESSING
+--
+-- Return:
+--   ticket_id, subject, status, chunk_text, distance
+--
+-- Rules:
+-- - Join practice_ticket_chunks to practice_tickets.
+-- - Use WHERE for the status filter.
+-- - Sort closest first.
+-- - LIMIT 5.
+--
+-- Write your answer below:
+
+
+-- ============================================================
+-- Challenge 4: Multiple Metadata Filters
+-- ============================================================
+--
+-- Find high or urgent open tickets similar to account-access problems.
+--
+-- Query vector:
+--   [0.91,0.10,0.12]
+--
+-- Return:
+--   ticket_id, subject, priority, status, distance
+--
+-- Rules:
+-- - priority must be HIGH or URGENT.
+-- - status must be PENDING or PROCESSING.
+-- - Sort closest first.
+-- - LIMIT 5.
+--
+-- Write your answer below:
+
+
+-- ============================================================
+-- Challenge 5: Threshold Search
+-- ============================================================
+--
+-- Find chunks that are close enough to this billing query vector:
+--
+--   [0.09,0.94,0.08]
+--
+-- Return:
+--   chunk_id, ticket_id, chunk_text, distance
+--
+-- Rules:
+-- - Only return rows with distance < 0.03.
+-- - You cannot use a SELECT alias directly in WHERE.
+-- - Use a CTE or repeat the distance expression.
+-- - Sort by distance ascending.
+--
+-- Write your answer below:
+
+
+-- ============================================================
+-- Challenge 6: Best Matching Ticket
+-- ============================================================
+--
+-- Find the 3 tickets most similar to this billing query vector:
+--
+--   [0.09,0.94,0.08]
+--
+-- Return:
+--   ticket_id, subject, category, best_distance
+--
+-- Rules:
+-- - Compute distance at chunk level.
+-- - Use MIN(distance) to collapse chunks into one score per ticket.
+-- - Join back to practice_tickets.
+-- - Sort by best_distance ascending.
+-- - LIMIT 3.
+--
+-- Write your answer below:
+
+
+-- ============================================================
+-- Challenge 7: Nearest Prototype Classification
+-- ============================================================
+--
+-- For every chunk, predict the nearest category prototype.
+--
+-- Prototype vectors:
+--   ACCOUNT_ACCESS  [0.92,0.10,0.09]
+--   BILLING         [0.09,0.93,0.08]
+--   DELIVERY        [0.06,0.13,0.93]
+--   TECHNICAL       [0.60,0.10,0.72]
+--
+-- Return:
+--   chunk_id, chunk_text, predicted_category, distance
+--
+-- Rules:
+-- - Create a CTE named prototypes.
+-- - Return one prediction per chunk.
+-- - Use either CROSS JOIN LATERAL or DISTINCT ON.
+-- - Order by chunk_id.
+--
+-- Write your answer below:
+
+
+-- ============================================================
+-- Challenge 8: Composite B-tree Index
+-- ============================================================
+--
+-- Target query:
+--
+--   SELECT *
+--   FROM practice_tickets
+--   WHERE category = 'BILLING'
+--     AND status = 'PENDING'
+--   ORDER BY created_at DESC;
+--
+-- Write the CREATE INDEX statement.
+--
+-- Rules:
+-- - Use a composite B-tree index.
+-- - Put category and status before created_at.
+-- - Use created_at DESC.
+--
+-- Write your answer below:
+
+
+-- ============================================================
+-- Challenge 9: Partial Index
+-- ============================================================
+--
+-- Target query:
+--
+--   SELECT id, subject, priority, created_at
+--   FROM practice_tickets
+--   WHERE status IN ('PENDING', 'PROCESSING')
+--     AND priority = 'URGENT'
+--   ORDER BY created_at DESC;
+--
+-- Write the CREATE INDEX statement.
+--
+-- Rules:
+-- - Index created_at DESC.
+-- - Add a WHERE clause to the index.
+-- - The index WHERE clause should match the stable filter.
+--
+-- Write your answer below:
+
+
+-- ============================================================
+-- Challenge 10: Expression Index
+-- ============================================================
+--
+-- Target query:
+--
+--   SELECT *
+--   FROM practice_tickets
+--   WHERE lower(customer_email) = lower('AVA@EXAMPLE.COM');
+--
+-- Write the CREATE INDEX statement.
+--
+-- Rules:
+-- - The index expression must match the query expression.
+--
+-- Write your answer below:
+
+
+-- ============================================================
+-- Challenge 11: JSONB GIN Index
+-- ============================================================
+--
+-- Target query:
+--
+--   SELECT *
+--   FROM practice_tickets
+--   WHERE payload @> '{"source":"chat"}'::jsonb;
+--
+-- Write the CREATE INDEX statement.
+--
+-- Rules:
+-- - Use GIN.
+-- - Index payload.
+--
+-- Write your answer below:
+
+
+-- ============================================================
+-- Challenge 12: pgvector HNSW Index
+-- ============================================================
+--
+-- Target query:
+--
+--   SELECT id, chunk_text
+--   FROM practice_ticket_chunks
+--   ORDER BY embedding <=> '[0.93,0.10,0.08]'::vector
+--   LIMIT 20;
+--
+-- Write the CREATE INDEX statement.
+--
+-- Rules:
+-- - Use HNSW.
+-- - Use vector_cosine_ops.
+--
+-- Write your answer below:

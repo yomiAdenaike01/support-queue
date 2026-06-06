@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-
+from typing import Optional
 
 @dataclass
 class Message:
@@ -13,6 +13,8 @@ class Ticket:
     subject: str
     customer_email: str
     messages: list[Message]
+    category: Optional[str] = None
+    suggested_response: Optional[str] = None
 
     def to_json(self) -> str:
         import json
@@ -20,5 +22,7 @@ class Ticket:
             "id": self.id,
             "subject": self.subject,
             "customer_email": self.customer_email,
+            "suggested_response": self.suggested_response,
+            "category": self.category,
             "messages": [m.content for m in self.messages]
         })

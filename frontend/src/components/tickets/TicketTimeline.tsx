@@ -14,19 +14,30 @@ const classes: Record<TicketEvent["eventType"], string> = {
 };
 
 export function TicketTimeline({ events }: { events: TicketEvent[] }) {
+  console.log({ events });
   return (
     <Card>
       <h2 className="mb-5 text-lg font-semibold">Event Timeline</h2>
       <div className="space-y-4">
         {events
           .slice()
-          .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+          .sort(
+            (a, b) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+          )
           .map((event) => (
-            <details key={event.id} className="border-l border-slate-700 pl-5">
+            <details
+              key={event.eventType}
+              className="border-l border-slate-700 pl-5"
+            >
               <summary className="cursor-pointer list-none">
                 <div className="flex flex-wrap items-center gap-3">
-                  <Badge className={classes[event.eventType]}>{event.eventType.replaceAll("_", " ")}</Badge>
-                  <span className="text-sm text-slate-400">{formatDate(event.createdAt)}</span>
+                  <Badge className={classes[event.eventType]}>
+                    {String(event.eventType).replaceAll("_", " ")}
+                  </Badge>
+                  <span className="text-sm text-slate-400">
+                    {formatDate(event.createdAt)}
+                  </span>
                 </div>
               </summary>
               <pre className="mt-3 overflow-x-auto rounded-lg bg-surface-2 p-3 text-xs text-slate-300">

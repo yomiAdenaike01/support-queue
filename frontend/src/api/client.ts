@@ -1,7 +1,7 @@
 import axios from "axios";
 
-export const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
-export const USE_MOCK = import.meta.env.VITE_USE_MOCK_API !== "false";
+export const BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+export const USE_MOCK = import.meta.env.VITE_USE_MOCK_API === "true";
 
 export const api = axios.create({
   baseURL: BASE_URL,

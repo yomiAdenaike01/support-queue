@@ -4,6 +4,6 @@ import type { StreamStats } from "@/types";
 
 export async function getStreamStats(): Promise<StreamStats> {
   if (USE_MOCK) return mockDelay(mockStreamStats);
-  const { data } = await api.get<StreamStats>("/api/stream/stats");
+  const { data } = await api.get<StreamStats>("/stream/stats");
   return data;
 }

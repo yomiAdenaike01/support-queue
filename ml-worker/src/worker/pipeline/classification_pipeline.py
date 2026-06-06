@@ -74,7 +74,7 @@ class WorkerContext:
             })
 
 
-class Pipeline:
+class ClassificationPipeline:
     _integrations: "Integrations"
     _stage_register: "StageRegister"
     _cache: "Redis"
@@ -237,3 +237,6 @@ class Pipeline:
             },
         )
         return ctx
+
+
+
