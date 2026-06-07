@@ -20,8 +20,14 @@ func NewRepository(db *sqlx.DB) *Repository {
 func (r *Repository) Create(ctx context.Context, input CreateRequest) (DbCreateKnowledgeBaseRow, error) {
 	var created DbCreateKnowledgeBaseRow
 	metadata := input.Metadata
+	content := input.Content
+
 	if len(metadata) == 0 {
 		metadata = json.RawMessage("null")
+	}
+	if len(input.Content) == 0 {
+		content = json.RawMessage("null")
+
 	}
 
 	err := r.db.GetContext(
@@ -31,8 +37,20 @@ func (r *Repository) Create(ctx context.Context, input CreateRequest) (DbCreateK
 		input.SourceId,
 		input.SourceEventType,
 		metadata,
-		input.Content,
+		content,
 		pgvector.NewVector(input.Embedding),
 	)
 	return created, err
+}
+
+func (r *Repository) Find(ctx context.Context, search searchInput) ([]DbCreateKnowledgeBaseRow, error) {
+	var dest []DbCreateKnowledgeBaseRow
+	var embedding pgvector.Vector
+	if search.Embedding != nil {
+		embedding = pgvector.NewVector(search.Embedding)
+	}
+	if err := r.db.SelectContext(ctx, &dest, queries.FIND_SIMILAR_TICKETS, search.Id, embedding, search.SourceType, search.getOffset(), search.getLimit()); err != nil {
+		return dest, err
+	}
+	return dest, nil
 }

@@ -37,17 +37,19 @@ class Application:
 
         configure_logging()
         
+        
         self._health_check(base_url)
-        
-        self._ticket_repository = TicketRepository(base_url=ticket_repo_url)
-        
         self._event_bus = EventBus(url=event_bus_url)
         self._event_bus.connect()
         self._cache = self._event_bus.get_cache()
         self._integrations = Integrations(cache=self._cache)
-        self._classifier = ClassificationPipeline(self._integrations, cache=self._cache)
+        knowledge_base = KnowledgeBase(base_url=base_url)
+        self._ticket_repository = TicketRepository(base_url=ticket_repo_url)
         
-        self._resolver = ResolutionPipeline(self._integrations, cache=self._cache, knowledge_base=KnowledgeBase(base_url=base_url))
+        
+        self._classifier = ClassificationPipeline(self._integrations, cache=self._cache, knowledge_base=knowledge_base)
+        
+        self._resolver = ResolutionPipeline(self._integrations, knowledge_base=knowledge_base)
 
     def on_create_ticket(self):
         return self._event_bus.await_new_event()

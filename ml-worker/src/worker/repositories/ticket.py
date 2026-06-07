@@ -1,6 +1,6 @@
 import json
-import asyncio
-from typing import TYPE_CHECKING, Dict, TypedDict
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Optional, TypedDict
 from httpx import AsyncClient, HTTPStatusError
 from pathlib import Path
 from logging import getLogger
@@ -13,10 +13,13 @@ if TYPE_CHECKING:
 
 class FindTicketByIdResponse(TypedDict):
     id: str
-    customer_email: str
+    customerEmail: str
     subject: str
     status: str
     messages: list["Message"]
+    suggestedResponse: Optional[str] = None
+    category: Optional[str] = None
+    events: list
 
 logger = getLogger('[ticket-repository]');
 
@@ -53,8 +56,10 @@ class TicketRepository:
             return Ticket(
                 id=ticket_json.get("id"),
                 subject=ticket_json.get("subject"),
-                customer_email=ticket_json.get("customer_email"), 
+                customer_email=ticket_json.get("customerEmail"), 
+                category=ticket_json.get("category"),
                 messages=messages_list,
+                suggested_response=ticket_json.get("suggestedResponse")
                 )
             
             

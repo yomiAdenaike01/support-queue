@@ -3,88 +3,33 @@ import json
 import hashlib
 import logging
 from textblob import TextBlob
-from dataclasses import dataclass
-from enum import Enum
-from typing import Optional, TypedDict, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from ..integrations import Integrations
 from .pipeline_stage import StageRegister
 from .pipeline_exception import PipelineException
-
-
+from .models import ClassificationSystemPromptInput, WorkerContext, ClassificationJson, ResolvedTicketSummary
+from ..knowledge_base import SearchFilter
 if TYPE_CHECKING:
     from ..ticket import Ticket
     from redis import Redis
+    from ..knowledge_base import KnowledgeBase
 
 logger = logging.getLogger(__name__)
 
 # run stage class
-
-
-class ClassificationJson(TypedDict):
-    category: str
-    priority: str
-    suggested_response: str
-    urgency_flag: bool
-    urgency_reason: str
-
-
-@dataclass
-class Classification:
-    category: str
-    priority: str
-    suggested_response: str
-    urgency_flag: str
-    urgency_reason: str
-
-
-CATEGORIES = [
-    "BILLING",
-    "ACCOUNT_ACCESS",
-    "TECHNICAL",
-    "DELIVERY",
-    "CANCELLATION",
-    "GENERAL",
-]
-
-
-class Priority(str, Enum):
-    LOW = "LOW"
-    MEDIUM = "MEDIUM"
-    HIGH = "HIGH"
-
-
-@dataclass
-class WorkerContext:
-    ticket: Ticket
-    average_sentiment: float = 0.0
-    priority: Optional["Priority"] = None
-    category: str = ""
-    confidence_score: float = 0.0
-    suggested_response: str = ""
-    requires_urgency: bool = False
-    urgency_reason: Optional[str] = None
-
-    def to_json(self):
-        return json.dumps({
-            "average_sentiment": self.average_sentiment,
-            "priority":self.priority,
-            "suggested_response": self.suggested_response,
-            "urgency_reason": self.urgency_reason,
-            "requires_urgency": self.requires_urgency,
-            })
-
-
 class ClassificationPipeline:
     _integrations: "Integrations"
     _stage_register: "StageRegister"
     _cache: "Redis"
+    _knowledge_base: "KnowledgeBase"
 
-    def __init__(self, integrations: "Integrations", cache: "Redis"):
+    def __init__(self, integrations: "Integrations", cache: "Redis", knowledge_base:"KnowledgeBase"):
         self._integrations = integrations
         self._stage_register = StageRegister()
         self._cache = cache
+        self._knowledge_base = knowledge_base
 
-    def _sentiment_per_message(self, ctx: WorkerContext) -> WorkerContext:
+    def _sentiment_per_message(self, ctx: "WorkerContext") -> "WorkerContext":
         stage = self._stage_register.start_new_stage(name="sentiment-analysis", input=ctx)
         average_sentiment = sum(
             [TextBlob(msg.content).sentiment.polarity for msg in ctx.ticket.messages]
@@ -102,35 +47,27 @@ class ClassificationPipeline:
             },
         )
 
-    def _get_prompt(self, sentiment: float, categories: list[str]) -> str:
-        # TODO: Append similar messages to prompt to ensure correct categorisation
-        categories_as_str = " | ".join(cat.upper() for cat in categories)
-        return f"""You are a support ticket classifier. Reply ONLY with JSON, no other text.
-
-    Categories: {categories_as_str}
-    Priority: URGENT|HIGH|MEDIUM|LOW
-    Sentiment score: {sentiment} (range -1.0 to 1.0, negative is bad)
-
-    Flag urgency_flag as true if messages contain: legal threats, fraud, chargeback, sarcasm, extreme distress, or account compromise. Set urgency_reason to one sentence explaining why if urgency_flag should be set to true.
-    Ensure suggested response is in a professional and customer service tone.
-    category, suggested_response and priority are required. Urgency reason is only required is urgency_flag should be set to true.
-    {{"category":"","priority":"","suggested_response":"","urgency_flag":false,"urgency_reason":""}}
-    """
-
     def _hash_prompt(self, prompt: str) -> str:
         return hashlib.md5(prompt.encode('utf-8')).hexdigest()
     
-    def _store_classification_result(self, prompt: str,  classification: "ClassificationJson"):    
-        key = self._hash_prompt(prompt)
-        self._cache.set(key, json.dumps(classification), 1 * 60 * 10)
-
-    def _get_stored_classification_result(self, prompt: str) -> "ClassificationJson" | None:
-        entry = self._cache.get(self._hash_prompt(prompt))
-        if entry is None:
-            return None
-        return ClassificationJson(**json.loads(entry))
+    async def _fetch_similar_tickets(self, embedding:list[float] ) -> list["ResolvedTicketSummary"]:
+        related_knowledge_list = await self._knowledge_base.search(SearchFilter(source_type="resolved_ticket", embedding=embedding))
+        return [ResolvedTicketSummary(**json.dumps(item.content), id=item.get("sourceId")) for item in related_knowledge_list]
+    
+    async def _get_similar_cases(self, ticket_embed_str: str) -> list["ResolvedTicketSummary"]:
+        embedding = self._integrations.encoders.from_str_to_embedding(ticket_embed_str)
+        related_resolved_tickets = await self._fetch_similar_tickets(embedding)
+        if len(related_resolved_tickets) > 0:
+            ticket_map: dict[str, "ResolvedTicketSummary"] = {ticket.to_json(): ticket for ticket in related_resolved_tickets}
+            pairings = [(ticket_embed_str, ticket.to_json()) for ticket in related_resolved_tickets]
+            ranked_pairings = self._integrations.encoders.rank_pairings(keys=[ticket_json for _, ticket_json in pairings], pairings=pairings)
         
-    async def _get_llm_classification(self, ctx: WorkerContext) -> ClassificationJson:
+            filtered_list: list["ResolvedTicketSummary"] = [ticket_map.get(ticket_json) for ticket_json, _ in ranked_pairings[:3] if ticket_map.get(ticket_json) is not None]
+            return filtered_list
+        return []
+        
+    
+    async def _get_llm_classification(self, ctx: "WorkerContext") -> ClassificationJson:
         stage = self._stage_register.start_new_stage(name="llm-classification", input=ctx)
         logger.info(
             "Starting LLM ticket classification",
@@ -139,32 +76,16 @@ class ClassificationPipeline:
                 "message_count": len(ctx.ticket.messages),
             },
         )
-        system_prompt = self._get_prompt(ctx.average_sentiment, categories=CATEGORIES)
-        cached_result = self._get_stored_classification_result(system_prompt)
-
-        if cached_result is not None:
-             duration_ms = stage.complete(cached_result)
-             logger.info(
-            "Cache HIT Finished LLM ticket classification in %sms",
-            duration_ms,
-            extra={
-                "ticket_id": ctx.ticket.id,
-                "category": cached_result.get("category"),
-                "priority": cached_result.get("priority"),
-                "requires_urgency": cached_result.get("urgency_flag"),
-                "duration_ms": duration_ms,
-            }
-             )
-             return cached_result
+        ticket_embed = ctx.ticket.to_embed_str()
+        resolved_prev_cases = []
+        if ticket_embed is not None:
+            resolved_prev_cases = await self._get_similar_cases(ticket_embed)
+        system_prompt = ClassificationSystemPromptInput(sentiment=ctx.average_sentiment, previous_cases=resolved_prev_cases)
         
         logger.info("Cache MISS starting manual classification")
-        messages = ctx.ticket.messages
-        last_msgs = " | ".join(msg.content for msg in messages[-3:])
-        classification_result: ClassificationJson = json.loads(
-            await self._integrations.llm.prompt(system_prompt, last_msgs)
+        classification_result: "ClassificationJson" = json.loads(
+            await self._integrations.llm.prompt(system_prompt, ticket_embed)
         )
-        # store classification result
-        self._store_classification_result(system_prompt, classification_result)
         duration_ms = stage.complete(classification_result)
         logger.info(
             "Finished LLM ticket classification in %sms",
@@ -180,7 +101,7 @@ class ClassificationPipeline:
 
         return classification_result
 
-    async def _run_classifications(self, ctx: WorkerContext, attempt = 0) -> WorkerContext:
+    async def _run_classifications(self, ctx: "WorkerContext", attempt = 1) -> "WorkerContext":
         stage = self._stage_register.start_new_stage(name="classifcations", input=ctx)
         classification = await self._get_llm_classification(ctx)
         if len(classification.get('category')) == 0 and attempt + 1 <= 3:
@@ -206,7 +127,7 @@ class ClassificationPipeline:
 
 
 
-    async def run(self, ticket: Ticket) -> WorkerContext:
+    async def run(self, ticket: Ticket) -> "WorkerContext":
         stage = self._stage_register.start_new_stage("FULL_PIPELINE", input=ticket)
         logger.info("Starting ticket pipeline", extra={"ticket_id": ticket.id})
         ctx = WorkerContext(ticket=ticket)

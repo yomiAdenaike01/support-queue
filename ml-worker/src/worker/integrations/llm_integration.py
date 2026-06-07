@@ -46,7 +46,7 @@ class LLMIntegration:
         return md5(prompt_body.encode('utf-8')).hexdigest()
 
     def _get_cached_response(self, body_str: str) -> str:
-        hash = self._hash(body_str)
+        hash = f"prompt:{self._hash(body_str)}"
         return self._cache.get(hash)
     
     async def prompt(self, system_prompt: str, prompt: str, timer = None):
@@ -91,7 +91,7 @@ class LLMIntegration:
                 data = response.json()
                 content = data["choices"][0]["message"]["content"]
                 
-                self._cache.set(self._hash(body_str), content)
+                self._cache.set(f"prompt:{self._hash(body_str)}", content)
 
                 logger.info(f"LLM Response: {content}")
                 logger.info(

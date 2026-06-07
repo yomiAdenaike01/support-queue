@@ -1,12 +1,13 @@
-from .llm_integration import LLMIntegration, IntegrationOptions
 from typing import TYPE_CHECKING
+from .llm_integration import LLMIntegration, IntegrationOptions
+from .encoders import Encoders
 
 if TYPE_CHECKING:
     from redis import Redis
-
 class Integrations:
-    llm: LLMIntegration
-
+    llm: "LLMIntegration"
+    encoders: "Encoders"
+    
     def __init__(self, cache:"Redis"):
         self.llm = LLMIntegration(
             options=IntegrationOptions(
@@ -14,3 +15,4 @@ class Integrations:
             ),
             cache=cache
         )
+        self.encoders = Encoders(cache=cache)

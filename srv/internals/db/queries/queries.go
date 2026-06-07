@@ -34,3 +34,6 @@ var INSERT_TICKET_EVENT string
 
 //go:embed insert_knowledgebase.sql
 var INSERT_KNOWLEDGE_BASE string
+
+//go:embed find_similar_tickets.sql
+var FIND_SIMILAR_TICKETS string

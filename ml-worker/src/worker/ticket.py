@@ -26,3 +26,10 @@ class Ticket:
             "category": self.category,
             "messages": [m.content for m in self.messages]
         })
+    def to_embed_str(self) -> Optional[str]:
+        if len(self.messages) == 0:
+            return None
+        return f"""
+            subject: {self.subject}
+            message: {self.messages[0].content}
+        """

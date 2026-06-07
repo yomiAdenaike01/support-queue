@@ -161,3 +161,4 @@ CREATE TABLE IF NOT EXISTS knowledge_base(
     content TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_knowledge_base_source_id ON knowledge_base(source_id);
+ALTER TABLE knowledge_base ALTER COLUMN content TYPE jsonb USING content::jsonb
