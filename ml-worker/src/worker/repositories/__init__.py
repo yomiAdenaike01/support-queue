@@ -1,4 +1,4 @@
-from .ticket import TicketRepository
-from .worker import WorkerRepository
+from .ticket import TicketRepository, UpdateTicketEvent
+from .worker import WorkerRepository, ClassificationResult
 
-__all__ = ['TicketRepository', "WorkerRepository"]
+__all__ = ['TicketRepository', "WorkerRepository", "UpdateTicketEvent", "ClassificationResult"]

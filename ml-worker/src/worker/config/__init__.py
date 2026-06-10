@@ -12,7 +12,7 @@ def create_config() -> Config:
     load_dotenv(env_path)
     return {
         "BASE_URL": os.environ.get("BASE_URL", ""),
-        "MAX_ATTEMPTS": os.environ.get("MAX_ATTEMPTS", 3)
+        "MAX_ATTEMPTS": int(os.environ.get("MAX_ATTEMPTS", 3))
     }        
 
 __all__ = ['create_config']

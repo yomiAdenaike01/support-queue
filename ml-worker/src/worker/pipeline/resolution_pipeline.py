@@ -1,14 +1,15 @@
 import json
-from typing import TYPE_CHECKING
 from logging import getLogger
-from .models import ResolvedTicketSummary, Pipeline
+from typing import TYPE_CHECKING
+
+from .models import Pipeline, ResolvedTicketSummary
 
 if TYPE_CHECKING:
     from ..integrations import Integrations
-    from ..ticket import Ticket
     from ..knowledge_base import KnowledgeBase
+    from ..ticket import Ticket
 
-logger = getLogger('[resolution-pipeline]')
+logger = getLogger("[resolution-pipeline]")
 
 
 RESOLUTION_SYSTEM_PROMPT = """You are a support ticket resolution summarizer.
@@ -29,6 +30,7 @@ Rules:
 Return this exact JSON shape:
 {"core_issue":"","steps_taken":"","resolution":""}"""
 
+
 class ResolutionPipeline(Pipeline):
     _integrations: "Integrations"
     _knowledge_base: "KnowledgeBase"
@@ -38,10 +40,9 @@ class ResolutionPipeline(Pipeline):
         self._knowledge_base = knowledge_base
 
     def _build_summarise_prompt(self, ticket: "Ticket") -> str:
-        conversation = "\n".join([
-            f"{msg.role.upper()}: {msg.content}"
-            for msg in ticket.messages
-        ])
+        conversation = "\n".join(
+            [f"{msg.role.upper()}: {msg.content}" for msg in ticket.messages]
+        )
         return f"""
             Subject: {ticket.subject}
             Conversation: {conversation}
@@ -50,15 +51,22 @@ class ResolutionPipeline(Pipeline):
     async def _summarise(self, ticket: "Ticket") -> "ResolvedTicketSummary":
         summary = self._build_summarise_prompt(ticket)
         logger.info(f"Summarising ticket id={ticket.id}")
-        response = await self._integrations.llm.prompt(system_prompt=RESOLUTION_SYSTEM_PROMPT, prompt=summary)
+        response = await self._integrations.llm.prompt(
+            system_prompt=RESOLUTION_SYSTEM_PROMPT, prompt=summary
+        )
         return ResolvedTicketSummary(**json.loads(response))
-    
+
     async def run(self, ticket: "Ticket"):
         logger.info(f"Running pipeline on ticket={ticket.id}")
         summary: "ResolvedTicketSummary" = await self._summarise(ticket)
         embedding_json = summary.to_json(ticket)
-        logger.info(f"Created embedding str id={ticket.id} embeddingstr={embedding_json}")
-        embedding = self._integrations.encoders.from_str_to_embedding(embedding_json)
+        logger.info(
+            f"Created embedding str id={ticket.id} embeddingstr={embedding_json}"
+        )
+        embedding: list[list[float]] = (
+            self._integrations.encoders.from_str_to_embedding(embedding_json)
+        )
         logger.info(f"Successfully created embedding ticket id={ticket.id}")
-        await self._knowledge_base.insert_resolved_ticket(id=ticket.id, content=embedding_json, embedding=embedding)
-
+        await self._knowledge_base.insert_resolved_ticket(
+            id=ticket.id, content=embedding_json, embedding=embedding
+        )

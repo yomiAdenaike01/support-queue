@@ -1,14 +1,26 @@
-import logging
 import json
+import logging
 from dataclasses import dataclass
-from time import perf_counter
-from ..utils import Timer
+from typing import TYPE_CHECKING, Optional, TypedDict
+
 from httpx import AsyncClient
-from typing import TYPE_CHECKING
+
+from ..utils import Timer
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from redis import Redis
+
+
+class LLMMessage(TypedDict):
+    role: str
+    content: str
+
+
+class LLMRequestBody(TypedDict):
+    model: str
+    messages: list[LLMMessage]
 
 
 @dataclass
@@ -43,15 +55,17 @@ class LLMIntegration:
 
     def _hash(self, prompt_body: str):
         from hashlib import md5
-        return md5(prompt_body.encode('utf-8')).hexdigest()
 
-    def _get_cached_response(self, body_str: str) -> str:
-        hash = f"prompt:{self._hash(body_str)}"
-        return self._cache.get(hash)
-    
-    async def prompt(self, system_prompt: str, prompt: str, timer = None):
+        return md5(prompt_body.encode("utf-8")).hexdigest()
+
+    def _get_cached_response(self, body_str: str) -> Optional[str]:
+        hash: str = f"prompt:{self._hash(body_str)}"
+        return str(self._cache.get(hash))
+
+    async def prompt(self, system_prompt: str, prompt: str) -> str:
+
         url = f"{self._options.base_url}/chat/completions"
-        body = {
+        body: LLMRequestBody = {
             "model": "llama3.2",
             "messages": [
                 {"role": "system", "content": system_prompt},
@@ -62,8 +76,9 @@ class LLMIntegration:
         cached_response = self._get_cached_response(body_str)
 
         if cached_response is not None:
-            return cached_response 
-        timer = Timer() if timer is None else timer
+            return cached_response
+
+        timer = Timer()
         logger.info(
             f"Sending LLM prompt - {body_str}",
             extra={
@@ -90,7 +105,7 @@ class LLMIntegration:
                 response.raise_for_status()
                 data = response.json()
                 content = data["choices"][0]["message"]["content"]
-                
+
                 self._cache.set(f"prompt:{self._hash(body_str)}", content)
 
                 logger.info(f"LLM Response: {content}")

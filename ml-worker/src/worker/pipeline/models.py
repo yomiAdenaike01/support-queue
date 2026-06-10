@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import json
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, TypedDict, Optional, Protocol
 from enum import Enum
+from typing import TYPE_CHECKING, Optional, Protocol, TypedDict
 
 if TYPE_CHECKING:
     from ..ticket import Ticket
@@ -14,7 +16,7 @@ CATEGORIES = [
     "TECHNICAL",
     "DELIVERY",
     "CANCELLATION",
-    "GENERAL"
+    "GENERAL",
 ]
 
 
@@ -23,9 +25,15 @@ class ClassificationSystemPromptInput:
     sentiment: float
     categories: list[str] = field(default_factory=list(CATEGORIES))
     previous_cases: list["ResolvedTicketSummary"] = field(default_factory=list)
-        
-    def to_prompt_text(self):
-        previous_cases_list = "" if len(self.previous_cases) == 0 else "\n".join([previous_case.to_json() for previous_case in self.previous_cases])
+
+    def to_prompt_text(self, ticket: "Ticket"):
+        previous_cases_list = (
+            ""
+            if len(self.previous_cases) == 0
+            else "\n".join(
+                [previous_case.to_json(ticket) for previous_case in self.previous_cases]
+            )
+        )
         categories_as_str = " | ".join(cat.upper() for cat in self.categories)
         return f"""You are a support ticket classifier. Reply ONLY with JSON, no other text.
         {f"Here is a list of similar cases: {previous_cases_list}" if len(previous_cases_list) > 0 else ""}
@@ -57,8 +65,6 @@ class Classification:
     urgency_reason: str
 
 
-
-
 class Priority(str, Enum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
@@ -77,29 +83,36 @@ class WorkerContext:
     urgency_reason: Optional[str] = None
 
     def to_json(self):
-        return json.dumps({
-            "average_sentiment": self.average_sentiment,
-            "priority":self.priority,
-            "suggested_response": self.suggested_response,
-            "urgency_reason": self.urgency_reason,
-            "requires_urgency": self.requires_urgency,
-            })
+        return json.dumps(
+            {
+                "average_sentiment": self.average_sentiment,
+                "priority": self.priority,
+                "suggested_response": self.suggested_response,
+                "urgency_reason": self.urgency_reason,
+                "requires_urgency": self.requires_urgency,
+            }
+        )
+
+
 @dataclass
 class ResolvedTicketSummary:
-    core_issue: str       
-    steps_taken: str       
+    core_issue: str
+    steps_taken: str
     resolution: str
     id: Optional[str] = None
 
     def to_json(self, ticket: "Ticket") -> str:
-        return json.dumps({
-            "core_issue": self.core_issue,
-            "resolution": self.resolution,
-            "steps_taken": self.steps_taken,
-            "subject": ticket.subject,
-            "suggested_response": ticket.suggested_response,
-            "category": ticket.category
-        })
+        return json.dumps(
+            {
+                "core_issue": self.core_issue,
+                "resolution": self.resolution,
+                "steps_taken": self.steps_taken,
+                "subject": ticket.subject,
+                "suggested_response": ticket.suggested_response,
+                "category": ticket.category,
+            }
+        )
+
 
 class Pipeline(Protocol):
-    async def run(self, ticket: "Ticket"): ...
+    async def run(self, ticket: "Ticket") -> Optional["WorkerContext"]: ...
