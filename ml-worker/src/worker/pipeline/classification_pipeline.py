@@ -63,7 +63,7 @@ class ClassificationPipeline(Pipeline):
         return hashlib.md5(prompt.encode("utf-8")).hexdigest()
 
     async def _fetch_similar_tickets(
-        self, embedding: list[float]
+        self, embedding: list[list[float]]
     ) -> list["ResolvedTicketSummary"]:
         related_knowledge_list = await self._knowledge_base.search(
             SearchFilter(source_type="resolved_ticket", embedding=embedding)
@@ -76,7 +76,9 @@ class ClassificationPipeline(Pipeline):
     async def _get_similar_cases(
         self, ctx_ticket: "Ticket", ticket_embed_str: str
     ) -> list["ResolvedTicketSummary"]:
-        embedding = self._integrations.encoders.from_str_to_embedding(ticket_embed_str)
+        embedding: list[list[float]] = (
+            self._integrations.encoders.from_str_to_embedding(ticket_embed_str)
+        )
         related_resolved_tickets = await self._fetch_similar_tickets(embedding)
         if len(related_resolved_tickets) > 0:
             ticket_map: dict[str, "ResolvedTicketSummary"] = {
