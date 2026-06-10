@@ -27,3 +27,4 @@ tickets.json
 .vscode/settings.json
 tickets.json
 ml-worker/stages.json
+ticket-resolution-cases.json

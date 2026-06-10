@@ -1,0 +1,119 @@
+import asyncio
+from logging import getLogger
+from .event_bus import EventBus
+from .pipeline import ClassificationPipeline, ResolutionPipeline
+from .integrations import Integrations
+from .repositories import TicketRepository, WorkerRepository
+from .knowledge_base import KnowledgeBase
+from .config import create_config
+from .queue import ResolutionQueue, ClassificationQueue
+from time import sleep
+from redis import Redis
+from .queue import QueueDependencies
+
+logger = getLogger('[worker]')
+
+def init_redis_client(url: str) -> "Redis":
+    redis_client = Redis.from_url(url, decode_responses=True)
+    result = redis_client.ping()
+    if result is False:
+        raise ValueError("Failed to connect to redis")
+    logger.info("Connected to Redis at %s", url)
+    return redis_client
+
+
+class Worker:
+    _classification_queue: "ClassificationQueue"
+    _resolution_queue: "ResolutionQueue"
+
+    def __init__(self):
+        logger.info("[Application]: Bootstraping application...")
+        worker_config = create_config()
+        self._config = worker_config
+        base_url = self._config.get("BASE_URL")
+        
+        ticket_repo_url = f"{base_url}/tickets"
+        redis_url = "redis://localhost:6379"
+
+        
+        
+        self._health_check(base_url)
+
+        redis_client = init_redis_client(redis_url)
+        integrations = Integrations(cache=redis_client)
+        knowledge_base = KnowledgeBase(base_url=base_url)
+        ticket_repository = TicketRepository(base_url=ticket_repo_url)
+        worker_repository = WorkerRepository(base_url=base_url)
+        event_bus = EventBus(redis_client=redis_client)        
+        
+        self._event_bus = event_bus
+
+        classification_queue_deps = QueueDependencies(
+            ticket_repository=ticket_repository,
+            worker_repository=worker_repository,
+            config=worker_config,
+            event_bus=event_bus,
+            pipeline=ClassificationPipeline(integrations, knowledge_base=knowledge_base)
+        )
+        resolution_queue_deps = QueueDependencies(
+            ticket_repository=ticket_repository,
+            worker_repository=worker_repository,
+            config=worker_config,
+            event_bus=event_bus,
+            pipeline=ResolutionPipeline(integrations, knowledge_base=knowledge_base)
+        )
+
+        self._classification_queue = ClassificationQueue(deps=classification_queue_deps)
+        self._resolution_queue = ResolutionQueue(deps=resolution_queue_deps)
+        logger.info("[Application]: Bootstraping complete!")
+    
+    async def start_pipeline_workers(self):
+        resolution_workers = self._resolution_queue.begin_workers()
+        classification_workers = self._classification_queue.begin_workers()
+        await asyncio.gather(*resolution_workers, *classification_workers, return_exceptions=True)
+
+    def _health_check(self, base_url: str):
+        from httpx import Client
+        max_attempts = 3
+        default_backoff = 5
+        with Client() as http:
+            for attempt in range(max_attempts):
+                try:
+                    response =  http.get(f"{base_url}/healthz")
+                    
+                    if response.status_code == 200:
+                        logger.info("[Application]: Health check passed!")
+                        return True
+                        
+                except Exception as e:
+                    logger.error("[Application]: Health check failed!", e)
+                
+                if attempt < max_attempts - 1:
+                    delay = default_backoff * (attempt + 1)
+                    logger.info(f"[Application]: Attempt {attempt + 1} failed. Retrying in {delay}s...")
+                    sleep(delay)
+                
+        return False 
+
+        
+    async def on_resolved_ticket_event(self):
+        logger.info("[Application:on_resolved_ticket_event]: Waiting for resolved ticket event...")
+        while True:
+           evnt = await asyncio.to_thread(self._event_bus.listen_resolved_tickets)
+           if evnt is None:
+               continue
+           resolved_ticket_id = evnt.get("data",None).get("ticket_id")
+           if resolved_ticket_id is None:
+               return
+           await self._resolution_queue.add_to_queue(evnt)
+
+    async def on_new_ticket(self):
+        logger.info("[Application:on_new_ticket]: Waiting for ticket event...")
+        while True:
+                evnt = await asyncio.to_thread(self._event_bus.listen_new_ticket)
+                if evnt is None:
+                    continue
+                ticket_id = evnt.get("data").get("ticket_id", None)
+                if ticket_id is None:
+                    continue
+                await self._classification_queue.add_to_queue(evnt)

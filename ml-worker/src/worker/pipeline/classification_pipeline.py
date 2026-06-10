@@ -7,26 +7,24 @@ from typing import TYPE_CHECKING
 from ..integrations import Integrations
 from .pipeline_stage import StageRegister
 from .pipeline_exception import PipelineException
-from .models import ClassificationSystemPromptInput, WorkerContext, ClassificationJson, ResolvedTicketSummary
+from .models import ClassificationSystemPromptInput, WorkerContext, ClassificationJson, ResolvedTicketSummary, Pipeline
 from ..knowledge_base import SearchFilter
 if TYPE_CHECKING:
     from ..ticket import Ticket
-    from redis import Redis
     from ..knowledge_base import KnowledgeBase
 
 logger = logging.getLogger(__name__)
 
 # run stage class
-class ClassificationPipeline:
+class ClassificationPipeline(Pipeline):
     _integrations: "Integrations"
     _stage_register: "StageRegister"
-    _cache: "Redis"
     _knowledge_base: "KnowledgeBase"
 
-    def __init__(self, integrations: "Integrations", cache: "Redis", knowledge_base:"KnowledgeBase"):
+    def __init__(self, integrations: "Integrations", knowledge_base:"KnowledgeBase"):
         self._integrations = integrations
         self._stage_register = StageRegister()
-        self._cache = cache
+        
         self._knowledge_base = knowledge_base
 
     def _sentiment_per_message(self, ctx: "WorkerContext") -> "WorkerContext":
@@ -125,9 +123,7 @@ class ClassificationPipeline:
             },
         )
 
-
-
-    async def run(self, ticket: Ticket) -> "WorkerContext":
+    async def run(self, ticket: "Ticket") -> "WorkerContext":
         stage = self._stage_register.start_new_stage("FULL_PIPELINE", input=ticket)
         logger.info("Starting ticket pipeline", extra={"ticket_id": ticket.id})
         ctx = WorkerContext(ticket=ticket)

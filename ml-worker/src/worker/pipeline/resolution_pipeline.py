@@ -1,9 +1,7 @@
 import json
 from typing import TYPE_CHECKING
-from dataclasses import dataclass
 from logging import getLogger
-from sentence_transformers import SentenceTransformer
-from .models import ResolvedTicketSummary
+from .models import ResolvedTicketSummary, Pipeline
 
 if TYPE_CHECKING:
     from ..integrations import Integrations
@@ -31,7 +29,7 @@ Rules:
 Return this exact JSON shape:
 {"core_issue":"","steps_taken":"","resolution":""}"""
 
-class ResolutionPipeline:
+class ResolutionPipeline(Pipeline):
     _integrations: "Integrations"
     _knowledge_base: "KnowledgeBase"
 

@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, TypedDict, Optional
+from typing import TYPE_CHECKING, TypedDict, Optional, Protocol
 from enum import Enum
 
 if TYPE_CHECKING:
@@ -100,3 +100,6 @@ class ResolvedTicketSummary:
             "suggested_response": ticket.suggested_response,
             "category": ticket.category
         })
+
+class Pipeline(Protocol):
+    async def run(self, ticket: "Ticket"): ...

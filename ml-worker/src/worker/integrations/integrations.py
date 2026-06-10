@@ -8,7 +8,7 @@ class Integrations:
     llm: "LLMIntegration"
     encoders: "Encoders"
     
-    def __init__(self, cache:"Redis"):
+    def __init__(self, cache: "Redis"):
         self.llm = LLMIntegration(
             options=IntegrationOptions(
                 base_url="http://localhost:11434/v1", timeout=200.0

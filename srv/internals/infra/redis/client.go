@@ -11,13 +11,16 @@ import (
 	"github.com/yomiAdenaike01/support-queue/internals/config"
 )
 
+type Streamname = string
+
+const (
+	RESOLVED_TICKET_STREAM Streamname = "TICKETS:RESOLVED_STREAM"
+	TICKET_CREATED         Streamname = "TICKETS_STREAM"
+)
+
 type StreamClient struct {
 	client     *redis.Client
-	streamName string
-}
-
-func (s *StreamClient) GetStreamName() string {
-	return s.streamName
+	streamName Streamname
 }
 
 type PushEventType string
@@ -27,13 +30,14 @@ const (
 )
 
 type PushEvent struct {
-	Values    map[string]interface{} `json:"values"`
-	EventType PushEventType          `json:"type"`
+	StreamName string                 `json:"stream_name"`
+	Values     map[string]interface{} `json:"values"`
+	EventType  PushEventType          `json:"type"`
 }
 
 func (s *StreamClient) Push(ctx context.Context, event PushEvent) error {
 	_, err := s.client.XAdd(ctx, &redis.XAddArgs{
-		Stream: s.streamName,
+		Stream: event.StreamName,
 		Values: event.Values,
 	}).Result()
 	return err
@@ -64,9 +68,11 @@ func NewStreamClient(ctx context.Context, config *config.Config) (*StreamClient,
 		return nil, err
 	}
 
-	err = client.XGroupCreateMkStream(ctx, streamName, consumerGroup, "0").Err()
-	if err != nil && !strings.Contains(err.Error(), "BUSYGROUP") {
-		return nil, err
+	for _, streamName := range []Streamname{TICKET_CREATED, RESOLVED_TICKET_STREAM} {
+		err = client.XGroupCreateMkStream(ctx, streamName, consumerGroup, "0").Err()
+		if err != nil && !strings.Contains(err.Error(), "BUSYGROUP") {
+			return nil, err
+		}
 	}
 
 	return &StreamClient{

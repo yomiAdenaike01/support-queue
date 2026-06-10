@@ -1,53 +1,55 @@
 from redis import Redis
-from pathlib import Path
-from typing import Dict, TYPE_CHECKING
-import json
+from typing import Any, TypedDict, Optional
 import logging
-from datetime import datetime
-from .ticket import Message, Ticket
-
 logger = logging.getLogger(__name__)
 
 
+class StreamEvent(TypedDict):
+    data: dict
+    id: str
+
 class EventBus:
-    _cache: "Redis"
+    _redis_client: "Redis"
     _url: str
 
-    def __init__(self, url: str):
-        self._url = url
-    def await_resolved_ticket(self):
-        return self._cache.xreadgroup(
+    def __init__(self, redis_client: "Redis"):
+        self._redis_client = redis_client
+
+    def listen_resolved_tickets(self) -> Optional["StreamEvent"]:
+        event = self._redis_client.xreadgroup(
             consumername='python-worker-1',
             groupname="TICKET_WORKERS",
-            streams={"RESOVLED_TICKETS": ">"},
+            streams={"TICKETS:RESOLVED_STREAM": ">"},
             count=1,
             block=5000
         )
-    def await_new_event(self):
-        return self._cache.xreadgroup(
+        if event is None:
+            return
+        for _, events in event:
+            if events is None or len(events) == 0: 
+                return 
+            for event_id, event in events:
+                return StreamEvent(id=event_id, data=event)
+    def listen_new_ticket(self) -> Optional["StreamEvent"]:
+        event = self._redis_client.xreadgroup(
             groupname="TICKET_WORKERS",
             consumername="python-worker-1",
             streams={"TICKETS_STREAM": ">"},
             count=1,
             block=5000,  # wait up to 5 seconds for a message
         )
-    
-    def get_cache(self) -> "Redis":
-        return self._cache
-    
-    def ack_classification_complete(self, ticket_id: str):
+        if event is None:
+            return
+        for _, messages in event:
+            if messages is None or len(messages) == 0:
+                return
+            for message_id, message in messages:
+                return StreamEvent(data=message,id=message_id)
+            
+    def ack_resolution(self, message_id: str):
+        self._redis_client.xack("TICKETS:RESOLVED_STREAM","TICKET_WORKERS", message_id)
+    def ack_classification(self, message_id: str):
         try:
-            self._cache.xack(ticket_id)
+            self._redis_client.xack("TICKETS_STREAM", "TICKET_WORKERS" ,message_id, )
         except Exception:
             return
-
-    def connect(self):
-        self._cache = Redis.from_url(self._url, decode_responses=True)
-        result = self._cache.ping()
-        if result is False:
-            raise ValueError("Failed to connect to redis")
-        logger.info("Connected to Redis at %s", self._url)
-
-    def dispose(self):
-        self._cache.close()
-        self._cache = None

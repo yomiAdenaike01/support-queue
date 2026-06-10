@@ -105,8 +105,9 @@ func (h *Handler) find(ctx *gin.Context) {
 
 func (h *Handler) pushToStream(ticketId string, message string) error {
 	return h.streamClient.Push(h.ctx, redisinfra.PushEvent{
-		EventType: redisinfra.PUSHEVENT_TICKET_SUBMITTED,
-		Values: map[string]interface{}{
+		EventType:  redisinfra.PUSHEVENT_TICKET_SUBMITTED,
+		StreamName: redisinfra.TICKET_CREATED,
+		Values: map[string]any{
 			"ticket_id": ticketId,
 			"message":   message,
 		}})
