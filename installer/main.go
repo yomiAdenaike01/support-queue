@@ -38,7 +38,7 @@ func main() {
 	}
 
 	imagesList.Pull(ctx, cli)
-	imagesList.RunImages(ctx, cli)
+	daemon.RunImages(ctx, imagesList, cli)
 
 	<-sign.Done()
 
