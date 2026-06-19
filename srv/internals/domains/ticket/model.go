@@ -39,10 +39,11 @@ type DbCreateTicketResult struct {
 }
 
 type MessageResponse struct {
-	Id       string  `json:"id"`
-	Content  string  `json:"content"`
-	Role     string  `json:"role"`
-	TicketId *string `json:"ticket_id"`
+	Id        string     `json:"id"`
+	Content   string     `json:"content"`
+	Role      string     `json:"role"`
+	TicketId  *string    `json:"ticket_id"`
+	CreatedAt *time.Time `json:"createdAt"`
 }
 
 type CreateResponse struct {
@@ -70,6 +71,7 @@ type DbFindTicketByIdRow struct {
 	MessageId         sql.NullString `db:"message_id"`
 	MessageContent    sql.NullString `db:"message_content"`
 	MessageRole       sql.NullString `db:"message_role"`
+	MessageCreatedAt  sql.NullTime   `db:"message_created_at"`
 	Events            TicketEvents   `db:"events"`
 	CreatedAt         sql.NullTime   `db:"created_at"`
 }

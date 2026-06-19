@@ -10,7 +10,7 @@ export function StreamStats({ stats, metrics }: { stats: StreamStatsType; metric
         <Stat label="Pending" value={stats.pendingMessages} />
         <Stat label="Dead Letter" value={stats.deadLetterCount} />
         <Stat label="Processed" value={stats.totalProcessed} />
-        <Stat label="Avg Time" value={formatDuration(metrics?.averageProcessingTimeMs ?? 0)} />
+        <Stat label="Avg Time" value={formatDuration(metrics?.averageProcessingTimeMs.today ?? 0)} />
       </div>
     </Card>
   );

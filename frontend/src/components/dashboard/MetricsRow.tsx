@@ -11,6 +11,8 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import type { Metrics } from "@/types";
 import { formatNumber } from "@/utils/format";
 
+type MetricKey = keyof Metrics;
+
 export function MetricsRow({
   metrics,
   loading,
@@ -22,42 +24,42 @@ export function MetricsRow({
     ? [
         {
           label: "Total Tickets",
-          valueKey: "totalTickets",
+          valueKey: "totalTickets" as MetricKey,
           value: metrics.totalTickets.today,
           icon: Inbox,
           tone: "text-slate-200",
         },
         {
           label: "Pending",
-          valueKey: "pendingTickets",
+          valueKey: "pendingTickets" as MetricKey,
           value: metrics.pendingTickets.today,
           icon: Clock,
           tone: "text-amber-300",
         },
         {
           label: "Processing",
-          valueKey: "processingTickets",
+          valueKey: "processingTickets" as MetricKey,
           value: metrics.processingTickets.today,
           icon: Loader,
           tone: "text-blue-300",
         },
         {
           label: "Processed",
-          valueKey: "processedTickets",
+          valueKey: "processedTickets" as MetricKey,
           value: metrics.processedTickets.today,
           icon: CheckCircle,
           tone: "text-emerald-300",
         },
         {
           label: "Failed",
-          valueKey: "failedTickets",
+          valueKey: "failedTickets" as MetricKey,
           value: metrics.failedTickets.today,
           icon: AlertTriangle,
           tone: "text-red-300",
         },
         {
           label: "Dead Letter",
-          valueKey: "failedTickets",
+          valueKey: "deadLetterCount" as MetricKey,
           value: metrics?.deadLetterCount?.today || 0,
           icon: MailWarning,
           tone: "text-red-300",
@@ -73,7 +75,7 @@ export function MetricsRow({
         : items.map((item) => {
             const Icon = item.icon;
             const percentageDifference =
-              metrics[item.valueKey]?.percentageDifference ?? 0;
+              metrics?.[item.valueKey]?.percentageDifference ?? 0;
             return (
               <Card key={item.label} className="p-4">
                 <div className="flex items-center justify-between">

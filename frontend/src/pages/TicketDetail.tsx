@@ -9,6 +9,7 @@ import { Modal } from "@/components/ui/Modal";
 import { SkeletonRows } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { MessageThread } from "@/components/tickets/MessageThread";
+import { MessageComposer } from "@/components/tickets/MessageComposer";
 import { TicketTimeline } from "@/components/tickets/TicketTimeline";
 import { useTicket, useTicketEvents, useTicketMutations } from "@/hooks/useTickets";
 import { formatDate } from "@/utils/format";
@@ -41,7 +42,7 @@ export function TicketDetail() {
         <PriorityBadge priority={item.priority} />
         <div className="ml-auto flex gap-2">
           {item.status === "FAILED" ? <Button variant="secondary" onClick={() => setConfirm("reprocess")}>Reprocess</Button> : null}
-          {item.status === "PROCESSED" ? <Button onClick={() => setConfirm("resolve")}>Resolve</Button> : null}
+          {item.status !== "RESOLVED" ? <Button onClick={() => setConfirm("resolve")}>Mark Resolved</Button> : null}
         </div>
       </div>
       <div className="grid gap-6 xl:grid-cols-[3fr_2fr]">
@@ -49,6 +50,18 @@ export function TicketDetail() {
           <h2 className="text-xl font-semibold">{item.subject}</h2>
           <div className="mt-2 text-sm text-slate-400">{item.customerEmail} · Created {formatDate(item.createdAt)}</div>
           <div className="mt-6"><MessageThread messages={item.messages} /></div>
+          <MessageComposer
+            loading={mutations.addMessage.isPending}
+            onSubmit={async (message) => {
+              await mutations.addMessage.mutateAsync({
+                ticketId: item.id,
+                customerEmail: item.customerEmail,
+                content: message.content,
+                role: message.role,
+              });
+              toast.push("Message added", "success");
+            }}
+          />
         </Card>
         <Card>
           <h2 className="mb-4 text-lg font-semibold">Classification</h2>

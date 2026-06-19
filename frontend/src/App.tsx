@@ -6,6 +6,7 @@ import { CreateTeam } from "@/pages/CreateTeam";
 import { CreateTicket } from "@/pages/CreateTicket";
 import { Dashboard } from "@/pages/Dashboard";
 import { Onboarding } from "@/pages/Onboarding";
+import { InputSources } from "@/pages/InputSources";
 import { Settings } from "@/pages/Settings";
 import { Simulator } from "@/pages/Simulator";
 import { SlackCallback } from "@/pages/SlackCallback";
@@ -41,6 +42,7 @@ export function App() {
             <Route path="/teams/new" element={<CreateTeam />} />
             <Route path="/teams/:id" element={<TeamDetail />} />
             <Route path="/simulator" element={<Simulator />} />
+            <Route path="/input-sources" element={<InputSources />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
         </Routes>

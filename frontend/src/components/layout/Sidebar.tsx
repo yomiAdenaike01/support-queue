@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  ListPlus,
   Play,
   Plus,
   Settings,
@@ -14,6 +15,7 @@ const navItems = [
   { to: "/tickets", label: "Tickets", icon: Ticket },
   { to: "/tickets/new", label: "Create Ticket", icon: Plus },
   { to: "/teams", label: "Teams", icon: Users },
+  { to: "/input-sources", label: "Input Sources", icon: ListPlus },
   { to: "/simulator", label: "Simulator", icon: Play },
   { to: "/settings", label: "Settings", icon: Settings },
 ];

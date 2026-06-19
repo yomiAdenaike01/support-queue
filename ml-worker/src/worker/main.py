@@ -10,10 +10,11 @@ logger = getLogger("[main]")
 async def init_worker():
     configure_logging()
     worker = Worker()
+    start_workers_routine = worker.start_workers()
     resolution_listener = asyncio.create_task(worker.on_resolved_ticket_event())
     classification_listener = asyncio.create_task(worker.on_new_ticket())
     await asyncio.gather(
-        worker.start_pipeline_workers(), resolution_listener, classification_listener
+        start_workers_routine, resolution_listener, classification_listener
     )
 
 

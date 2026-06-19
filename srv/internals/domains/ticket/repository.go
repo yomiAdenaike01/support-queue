@@ -97,7 +97,10 @@ type EventResponse struct {
 	Payload json.RawMessage `json:"payload"`
 }
 
-var ErrDuplicateTicketEvent = errors.New("ticket event already exists")
+var (
+	ErrDuplicateTicketEvent = errors.New("ticket event already exists")
+	ErrFailedToUpdateTicket = errors.New("Failed to update ticket")
+)
 
 const (
 	TICKET_CREATED     TicketEventType = "TICKET_CREATED"
@@ -123,13 +126,6 @@ func emptyStrOrNil(s string) *string {
 	return &s
 }
 
-func nullIfEmpty(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
 func (f FindFilters) ToArgs() []any {
 	return []any{
 		emptyStrOrNil(f.Search),
@@ -149,6 +145,7 @@ func nullableTimePtr(nullableTime sql.NullTime) *time.Time {
 
 type UpdateTicketInput struct {
 	SuggestedResponse *string
+	Status            *string
 	AverageSentiment  *float32
 	Priority          *string
 	Category          *string
@@ -164,11 +161,12 @@ func (r *Repository) FindAndUpdate(ctx context.Context, id string, update Update
 		priority = COALESCE($3::TEXT, priority),
 		category = COALESCE($4::TEXT, category),
 		requires_urgency = COALESCE($5, requires_urgency),
-		urgency_reason = COALESCE($6::TEXT, urgency_reason)
+		urgency_reason = COALESCE($6::TEXT, urgency_reason),
 		assigned_team = COALESCE($7::TEXT, assigned_team)
-	WHERE id = $8
+		status = COALESCE($8::TEXT, status)
+	WHERE id = $9
 	RETURNING *
-	 `, update.SuggestedResponse, update.AverageSentiment, update.Priority, update.Category, update.RequiresUrgency, update.UrgencyReason, update.AssignedTeam, id)
+	 `, update.SuggestedResponse, update.AverageSentiment, update.Priority, update.Category, update.RequiresUrgency, update.UrgencyReason, update.AssignedTeam, update.Status, id)
 	if err != nil {
 		return err
 	}
@@ -177,7 +175,7 @@ func (r *Repository) FindAndUpdate(ctx context.Context, id string, update Update
 		return err
 	}
 	if affected == 0 {
-		return errors.New("Failed to update ticket data")
+		return ErrFailedToUpdateTicket
 	}
 	return nil
 }
@@ -247,7 +245,7 @@ func (r *Repository) FindById(ctx context.Context, input FindByIdInput) (TicketR
 		SuggestedResponse: nullableStringPtr(first.SuggestedResponse),
 		Messages:          make([]MessageResponse, 0, len(rows)),
 		Events:            first.Events,
-		CreatedAt:         nil,
+		CreatedAt:         nullableTimePtr(first.CreatedAt),
 	}
 
 	for _, row := range rows {
@@ -255,10 +253,11 @@ func (r *Repository) FindById(ctx context.Context, input FindByIdInput) (TicketR
 			continue
 		}
 		response.Messages = append(response.Messages, MessageResponse{
-			Id:       row.MessageId.String,
-			Content:  row.MessageContent.String,
-			Role:     row.MessageRole.String,
-			TicketId: &first.TicketId,
+			Id:        row.MessageId.String,
+			Content:   row.MessageContent.String,
+			Role:      row.MessageRole.String,
+			TicketId:  &first.TicketId,
+			CreatedAt: nullableTimePtr(row.MessageCreatedAt),
 		})
 	}
 

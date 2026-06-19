@@ -19,7 +19,7 @@ class Encoders:
         result = self._cache.get(cache_key)
         if result is not None:
             return list(json.loads(result))
-        encoded_list = self._transformer.encode(str).tolist()
+        encoded_list: list[list[float]] = list(self._transformer.encode(str).tolist())
         self._cache.set(cache_key, json.dumps(list))
         return encoded_list
 

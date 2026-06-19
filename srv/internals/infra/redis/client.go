@@ -26,7 +26,8 @@ type StreamClient struct {
 type PushEventType string
 
 const (
-	PUSHEVENT_TICKET_SUBMITTED = "TICKET_SUBMITTED"
+	PUSHEVENT_TICKET_SUBMITTED PushEventType = "TICKET_SUBMITTED"
+	TICKET_RESOLVED            PushEventType = "TICKET_SUBMITTED"
 )
 
 type PushEvent struct {

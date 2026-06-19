@@ -189,3 +189,34 @@ export interface TicketFilters {
   page?: number;
   limit?: number;
 }
+
+export type TicketInputSourceType =
+  | "EMAIL"
+  | "WEB_FORM"
+  | "LIVE_CHAT"
+  | "PHONE"
+  | "SOCIAL_MEDIA"
+  | "WHATSAPP_BUSINESS"
+  | "SMS"
+  | "IN_APP"
+  | "COMMUNITY_FORUM"
+  | "API";
+
+export type TicketInputSourceStatus = "enabled" | "disabled" | "needs_setup";
+
+export interface TicketInputSourceConfig {
+  id: string;
+  type: TicketInputSourceType;
+  name: string;
+  description: string;
+  status: TicketInputSourceStatus;
+  isEnabled: boolean;
+  connectionLabel: string;
+  connectionValue: string;
+  routingTeam: string | null;
+  autoCreateTickets: boolean;
+  requiresAuth: boolean;
+  lastReceivedAt: string | null;
+  createdToday: number;
+  settings: Record<string, string | boolean>;
+}

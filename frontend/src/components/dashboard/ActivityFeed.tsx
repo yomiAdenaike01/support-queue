@@ -23,7 +23,7 @@ export function ActivityFeed() {
           .slice(0, 20)
           .map((event) => (
             <div key={event.id} className="flex items-center justify-between rounded-lg bg-surface-2 px-3 py-2 text-sm">
-              <span className={tone[event.eventType]}>{event.eventType.replaceAll("_", " ")}</span>
+              <span className={tone[event.eventType]}>{event.eventType.replace(/_/g, " ")}</span>
               <span className="text-slate-400">{event.ticketId} · {relativeTime(event.createdAt)}</span>
             </div>
           ))}

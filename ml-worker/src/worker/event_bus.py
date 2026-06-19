@@ -44,7 +44,7 @@ class EventBus:
             count=1,
             block=5000,  # wait up to 5 seconds for a message
         )
-        if event is None:
+        if event is None or len(event) == 0:
             return
         for _, messages in event:
             if messages is None or len(messages) == 0:

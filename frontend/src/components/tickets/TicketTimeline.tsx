@@ -33,7 +33,7 @@ export function TicketTimeline({ events }: { events: TicketEvent[] }) {
               <summary className="cursor-pointer list-none">
                 <div className="flex flex-wrap items-center gap-3">
                   <Badge className={classes[event.eventType]}>
-                    {String(event.eventType).replaceAll("_", " ")}
+                    {String(event.eventType).replace(/_/g, " ")}
                   </Badge>
                   <span className="text-sm text-slate-400">
                     {formatDate(event.createdAt)}

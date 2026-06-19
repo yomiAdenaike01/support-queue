@@ -14,9 +14,7 @@ import (
 )
 
 func main() {
-	if err := godotenv.Load("../.env"); err != nil {
-		panic(err)
-	}
+	godotenv.Load("../.env") // non-fatal; env vars injected externally (Docker) take precedence
 	cfg := config.New()
 	db := database.NewClient(cfg)
 

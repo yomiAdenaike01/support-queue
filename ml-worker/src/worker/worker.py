@@ -1,4 +1,5 @@
 import asyncio
+import os
 from logging import getLogger
 from time import sleep
 
@@ -20,8 +21,8 @@ logger = getLogger("[worker]")
 
 
 def init_redis_client(url: str) -> "Redis":
-    redis_client = Redis.from_url(url, decode_responses=True)
-    result: bool = redis_client.ping()
+    redis_client: "Redis" = Redis.from_url(url, decode_responses=True)  # type: ignore
+    result: bool = redis_client.ping()  # type: ignore
     if result is False:
         raise ValueError("Failed to connect to redis")
     logger.info("Connected to Redis at %s", url)
@@ -37,7 +38,7 @@ class Worker:
         worker_config = create_config()
 
         base_url = worker_config.get("BASE_URL")
-        redis_url = "redis://localhost:6379"
+        redis_url = os.environ.get("REDIS_ADDR", "redis://localhost:6379")
 
         health_check = self._health_check(base_url)
         if health_check is False:
@@ -74,12 +75,10 @@ class Worker:
         self._resolution_queue = ResolutionQueue(deps=resolution_queue_deps)
         logger.info("[Application]: Bootstraping complete!")
 
-    async def start_pipeline_workers(self):
+    async def start_workers(self):
         resolution_workers = self._resolution_queue.begin_workers()
         classification_workers = self._classification_queue.begin_workers()
-        await asyncio.gather(
-            *resolution_workers, *classification_workers, return_exceptions=True
-        )
+        await asyncio.gather(*resolution_workers, *classification_workers)
 
     def _health_check(self, base_url: str):
         from httpx import Client

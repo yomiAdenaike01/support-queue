@@ -1,12 +1,19 @@
 import { api, mockDelay, USE_MOCK } from "@/api/client";
 import { mockEvents } from "@/mocks/events";
 import { mockTickets } from "@/mocks/tickets";
-import type { Ticket, TicketEvent, TicketFilters } from "@/types";
+import type { Message, Ticket, TicketEvent, TicketFilters } from "@/types";
 
 export interface CreateTicketInput {
   customerEmail: string;
   subject: string;
   message: string;
+}
+
+export interface AddTicketMessageInput {
+  ticketId: string;
+  customerEmail: string;
+  content: string;
+  role: Message["role"];
 }
 
 export async function getTickets(filters: TicketFilters = {}): Promise<Ticket[]> {
@@ -68,11 +75,33 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
       createdAt: now,
       updatedAt: null,
       processedAt: null,
+      events: [],
     };
     mockTickets.unshift(ticket);
     return mockDelay(ticket);
   }
   const { data } = await api.post<Ticket>("/tickets", input);
+  return data;
+}
+
+export async function addTicketMessage(input: AddTicketMessageInput): Promise<Message> {
+  if (USE_MOCK) {
+    const ticket = await getTicket(input.ticketId);
+    const message: Message = {
+      id: `msg-${Date.now()}`,
+      content: input.content,
+      role: input.role,
+      createdAt: new Date().toISOString(),
+    };
+    ticket.messages.push(message);
+    ticket.updatedAt = message.createdAt;
+    return mockDelay(message);
+  }
+  const { data } = await api.post<Message>(`/tickets/${input.ticketId}/message`, {
+    content: input.content,
+    customerEmail: input.customerEmail,
+    role: input.role,
+  });
   return data;
 }
 

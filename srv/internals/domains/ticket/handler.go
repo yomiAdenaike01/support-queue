@@ -33,14 +33,47 @@ func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
 	group.GET("/tickets", h.find)
 	group.POST("/tickets/:id/message", h.insertMessage)
 	group.POST("/tickets/:id/events", h.addEvent)
+	group.POST("/tickets/:id/resolve", h.resolveTicket)
 }
 
-type AddEventParam struct {
+type IdParam struct {
 	Id string `uri:"id" binding:"required"`
 }
 
+func (h *Handler) resolveTicket(ctx *gin.Context) {
+	var params IdParam
+
+	if err := ctx.ShouldBindUri(&params); err != nil {
+		log.Println(err.Error())
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Failed to resolve ticket",
+		})
+		return
+	}
+	status := "RESOLVED"
+
+	if err := h.repository.FindAndUpdate(ctx.Request.Context(), params.Id, UpdateTicketInput{
+		Status: &status,
+	}); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to resolve ticket",
+		})
+		return
+	}
+	if err := h.streamClient.Push(ctx.Request.Context(), redisinfra.PushEvent{
+		StreamName: redisinfra.RESOLVED_TICKET_STREAM,
+		Values: map[string]any{
+			"ticket_id": params.Id,
+		},
+		EventType: redisinfra.TICKET_RESOLVED,
+	}); err != nil {
+		log.Printf("Failed to push ticket_id=%s to stream reason=%s", params.Id, err.Error())
+	}
+	ctx.JSON(http.StatusOK, nil)
+}
+
 func (h *Handler) addEvent(ctx *gin.Context) {
-	var params AddEventParam
+	var params IdParam
 	if err := ctx.ShouldBindUri(&params); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -70,29 +103,36 @@ func (h *Handler) addEvent(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, event)
 }
+
+type findQueryParams struct {
+	Search   string `uri:"search"`
+	Status   string `uri:"status"`
+	Priority string `uri:"priority"`
+	Category string `uri:"category"`
+	Limit    int    `uri:"limit"`
+}
+
+func (f findQueryParams) toRepoFindFilters() FindFilters {
+	if f.Limit == 0 {
+		f.Limit = 20
+	}
+	return FindFilters{
+		Search:   f.Search,
+		Status:   f.Status,
+		Priority: f.Priority,
+		Category: f.Category,
+		Limit:    f.Limit,
+	}
+}
 func (h *Handler) find(ctx *gin.Context) {
-	search := ctx.Query("search")
-	status := ctx.Query("status")
-	priority := ctx.Query("priority")
-	category := ctx.Query("category")
-	limit := ctx.Query("limit")
-
-	limitint, err := strconv.Atoi(limit)
-
-	if err != nil {
+	var queryParams findQueryParams
+	if err := ctx.ShouldBindUri(&queryParams); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
-		return
 	}
-
-	response, err := h.repository.Find(ctx, FindFilters{
-		Search:   search,
-		Status:   status,
-		Priority: priority,
-		Category: category,
-		Limit:    limitint,
-	})
+	repoFilters := queryParams.toRepoFindFilters()
+	response, err := h.repository.Find(ctx, repoFilters)
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -136,7 +176,7 @@ func (h *Handler) create(ctx *gin.Context) {
 
 	err = h.pushToStream(result.TicketId, data.Message)
 	if err != nil {
-		panic(err)
+		log.Printf("Failed to push ticketId=%s reason=%s", result.TicketId, err.Error())
 	}
 
 	ctx.JSON(http.StatusOK, CreateResponse{

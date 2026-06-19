@@ -150,6 +150,11 @@ func (w *Handler) notifyTeams(ctx context.Context, teams []teamdomain.TeamRespon
 
 func (w *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	rg.POST("", w.completeWork)
+	rg.GET("/health", w.serviceHealth)
+}
+
+func (w *Handler) serviceHealth(ctx *gin.Context) {
+
 }
 
 var CATEGORY_TO_TEAM = map[string][]string{

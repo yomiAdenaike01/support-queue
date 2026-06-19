@@ -81,5 +81,6 @@ export const mockTickets: Ticket[] = Array.from({ length: 30 }, (_, index) => {
       status === "PROCESSED" || status === "RESOLVED"
         ? new Date(new Date(created).getTime() + 18 * 60 * 1000).toISOString()
         : null,
+    events: [],
   };
 });

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createTicket, getTicket, getTicketEvents, getTickets, reprocessTicket, resolveTicket } from "@/api/tickets";
+import { addTicketMessage, createTicket, getTicket, getTicketEvents, getTickets, reprocessTicket, resolveTicket } from "@/api/tickets";
 import type { Ticket, TicketFilters } from "@/types";
 
 export function useTickets(filters: TicketFilters = {}) {
@@ -22,11 +22,24 @@ export function useTicketMutations() {
     create: useMutation({ mutationFn: createTicket }),
     reprocess: useMutation({
       mutationFn: reprocessTicket,
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tickets"] }),
+      onSuccess: (ticket, id) => {
+        queryClient.setQueryData(["ticket", id], ticket);
+        void queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      },
     }),
     resolve: useMutation({
       mutationFn: resolveTicket,
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tickets"] }),
+      onSuccess: (ticket, id) => {
+        queryClient.setQueryData(["ticket", id], ticket);
+        void queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      },
+    }),
+    addMessage: useMutation({
+      mutationFn: addTicketMessage,
+      onSuccess: (_, input) => {
+        void queryClient.invalidateQueries({ queryKey: ["ticket", input.ticketId] });
+        void queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      },
     }),
   };
 }

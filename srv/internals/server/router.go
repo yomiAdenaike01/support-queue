@@ -40,6 +40,7 @@ func NewRouter(deps RouterDependencies) *gin.Engine {
 	metricsHandler := metricsdomain.NewHandler(metricsRepository)
 	metricsHandler.RegisterRoutes(v1.Group("/metrics"))
 
+	// workerRepository := workerdomain.NewRepository(deps.DB)
 	workerHandler := workerdomain.NewHandler(deps.Context, deps.Integrations, teamRepository, ticketRepository)
 	workerHandler.RegisterRoutes(v1.Group("/worker"))
 

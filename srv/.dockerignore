@@ -1,0 +1,5 @@
+.gocache
+.env
+__debug*
+dist
+build

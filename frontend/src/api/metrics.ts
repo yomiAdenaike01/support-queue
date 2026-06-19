@@ -1,5 +1,4 @@
-import { api, mockDelay, USE_MOCK } from "@/api/client";
-import { mockMetrics } from "@/mocks/metrics";
+import { api } from "@/api/client";
 import type { Metrics } from "@/types";
 
 export async function getMetrics(): Promise<Metrics> {
