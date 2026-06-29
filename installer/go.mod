@@ -2,7 +2,10 @@ module github.com/yomiAdenaike01/support-ops/installer
 
 go 1.25.0
 
-require github.com/moby/moby/client v0.5.0
+require (
+	github.com/moby/moby/client v0.5.0
+	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
+)
 
 require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
@@ -18,7 +21,6 @@ require (
 	github.com/moby/moby/api v1.55.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
-	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.60.0 // indirect
 	go.opentelemetry.io/otel v1.35.0 // indirect

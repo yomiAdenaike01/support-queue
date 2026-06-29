@@ -90,16 +90,12 @@ func (h *Handler) addEvent(ctx *gin.Context) {
 
 	event, err := h.repository.CreateEvent(addEventBody)
 	if err != nil {
-		if errors.Is(err, ErrDuplicateTicketEvent) {
-			ctx.JSON(http.StatusConflict, gin.H{
+		if !errors.Is(err, ErrDuplicateTicketEvent) {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
 			})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
 	}
 	ctx.JSON(http.StatusOK, event)
 }

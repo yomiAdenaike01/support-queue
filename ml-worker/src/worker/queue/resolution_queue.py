@@ -45,7 +45,7 @@ class ResolutionQueue:
 
     def begin_workers(self, num_workers: int = 3):
         logger.info("[resolution-worker]: Resolution workers initialised.")
-        return [asyncio.create_task(self.__work()) for _ in range(num_workers)]
+        return [asyncio.create_task(self.__work())]
 
     async def add_to_queue(self, event: "StreamEvent"):
         await self._queue.put(event)

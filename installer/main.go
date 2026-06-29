@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+
 	"log"
 	"os"
 	"os/signal"
@@ -12,15 +13,20 @@ import (
 	"github.com/yomiAdenaike01/support-ops/installer/images"
 )
 
+type DockerComposefileTemplateInput struct {
+	Version string
+}
+
 func main() {
-	version := images.GetEnvVar("VERSION", "0.0.1-dev")
+	version := images.GetruntimeVersion()
 
 	imagesList := images.GetImagesList(version)
-	log.Printf("[Support-installer] Support queue installer version-%s images=%s", version, imagesList.AsString())
+	log.Printf("[Support-installer] Support queue installer version-%s images=%s", version, imagesList.String())
 
 	ctx := context.Background()
-	sign, cancel := signal.NotifyContext(ctx, os.Kill, os.Interrupt, syscall.SIGINT)
+	signalCtx, cancel := signal.NotifyContext(ctx, os.Kill, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
+	runner := daemon.New(signalCtx)
 
 	cli, err := client.New(
 		client.FromEnv,
@@ -37,9 +43,11 @@ func main() {
 		<-daemon.OpenBrowserAwaitInstallation(ctx, cli)
 	}
 
-	imagesList.Pull(ctx, cli)
-	daemon.RunImages(ctx, imagesList, cli)
+	runner.Up(version)
 
-	<-sign.Done()
+	<-signalCtx.Done()
+	log.Println("Signal detected, tearing down containers...")
+	runner.Down()
+	log.Println("Successfully closed containers")
 
 }

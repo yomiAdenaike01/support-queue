@@ -21,9 +21,7 @@ class ClassificationQueue:
         self._deps = deps
 
     def begin_workers(self, num_workers: int = 3):
-        return [
-            asyncio.create_task(self.__work(uuid4().hex)) for _ in range(num_workers)
-        ]
+        return [asyncio.create_task(self.__work(uuid4().hex))]
 
     def _to_classification_result(self, ctx: "WorkerContext") -> "ClassificationResult":
         return ClassificationResult(
@@ -63,6 +61,7 @@ class ClassificationQueue:
                     )
                     self._deps.event_bus.ack_classification(message_id=event.id)
                     self._queue.task_done()
+                    break
                 except Exception as error:
                     logger.error(
                         f"[classification-worker-{id}]: Failed worker task error=%s",

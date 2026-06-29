@@ -1,0 +1,85 @@
+services:
+  pg:
+    image: pgvector/pgvector:pg17
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pwd
+      - POSTGRES_DB=supportops
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d supportops"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=-1
+    deploy:
+      resources:
+        limits:
+          memory: 5g
+
+  srv:
+    image: adenaikeyomi/support-queue-srv:{{.Version}}
+    ports:
+      - "2342:2342"
+    environment:
+      - DATABASE_URL=postgres://user:pwd@pg:5432/supportops?sslmode=disable
+      - REDIS_ADDR=redis://redis:6379
+      - STREAM_NAME=TICKETS_STREAM
+      - STREAM_CONSUMER_GROUP=TICKET_WORKERS
+      - OAUTH_CALLBACK_URL=http://localhost:2342/api/v1/integrations/oauth/callback
+      - BASE_URL=http://localhost:2342/api/v1
+      - MAX_ATTEMPTS=3
+    depends_on:
+      pg:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  ml-worker:
+    image: adenaikeyomi/support-queue-ml-worker:{{.Version}}
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+      - STREAM_NAME=TICKETS_STREAM
+      - STREAM_CONSUMER_GROUP=TICKET_WORKERS
+      - BASE_URL=http://srv:2342/api/v1
+      - MAX_ATTEMPTS=3
+    depends_on:
+      redis:
+        condition: service_healthy
+      srv:
+        condition: service_started
+
+  frontend:
+    image: adenaikeyomi/support-queue-frontend:{{.Version}}
+    ports:
+      - "3000:80"
+    depends_on:
+      - srv
+
+volumes:
+  redis:
+  ollama_data:
+  pg_data:

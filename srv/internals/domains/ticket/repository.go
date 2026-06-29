@@ -264,7 +264,7 @@ func (r *Repository) FindById(ctx context.Context, input FindByIdInput) (TicketR
 	return response, true, nil
 }
 
-func (e DbEventResponse) ToResponse() EventResponse {
+func (e DbEventResponse) toResponse() EventResponse {
 	d, _ := json.Marshal(e)
 	var r DbEventResponse
 	if err := json.Unmarshal(d, &r); err != nil {
@@ -287,8 +287,8 @@ func (r *Repository) CreateEvent(input CreateEventInput) (EventResponse, error) 
 		if errors.Is(err, sql.ErrNoRows) {
 			return EventResponse{}, ErrDuplicateTicketEvent
 		}
-		return createdEvent.ToResponse(), err
+		return createdEvent.toResponse(), err
 	}
-	return createdEvent.ToResponse(), nil
+	return createdEvent.toResponse(), nil
 
 }

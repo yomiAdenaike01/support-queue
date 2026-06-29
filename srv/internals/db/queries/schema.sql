@@ -161,4 +161,21 @@ CREATE TABLE IF NOT EXISTS knowledge_base(
     content TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_knowledge_base_source_id ON knowledge_base(source_id);
-ALTER TABLE knowledge_base ALTER COLUMN content TYPE jsonb USING content::jsonb
+ALTER TABLE knowledge_base ALTER COLUMN content TYPE jsonb USING content::jsonb;
+
+CREATE TABLE IF NOT EXISTS input_sources (
+    id UUID NOT NULL UNIQUE DEFAULT uuid_generate_v4(),
+    pk SERIAL PRIMARY KEY NOT NULL,
+    connection_value TEXT NOT NULL,
+    status TEXT DEFAULT 'needs_setup' NOT NULL,
+    source_type TEXT NOT NULL,
+    name TEXT NOT NULL DEFAULT '',
+    enabled BOOLEAN DEFAULT TRUE,
+    config JSONB DEFAULT NULL,
+    team_pk INT DEFAULT NULL  REFERENCES team(pk) ON DELETE CASCADE,
+    team_id UUID DEFAULT NULL  REFERENCES team(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE input_sources ADD COLUMN IF NOT EXISTS name TEXT NOT NULL DEFAULT '';
+ALTER TABLE tickets ADD COLUMN IF NOT EXISTS input_source_pk INT DEFAULT NULL REFERENCES input_sources(pk) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS idx_source_type ON input_sources(source_type);

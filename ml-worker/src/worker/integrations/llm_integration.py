@@ -59,8 +59,9 @@ class LLMIntegration:
         return md5(prompt_body.encode("utf-8")).hexdigest()
 
     def _get_cached_response(self, body_str: str) -> Optional[str]:
-        hash: str = f"prompt:{self._hash(body_str)}"
-        return str(self._cache.get(hash))
+        str_hash: str = f"prompt:{self._hash(body_str)}"
+        result = self._cache.get(str_hash)
+        return str(result) if result is not None else None
 
     async def prompt(self, system_prompt: str, prompt: str) -> str:
 

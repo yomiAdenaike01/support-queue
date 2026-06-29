@@ -17,7 +17,6 @@ from .models import (
     ResolvedTicketSummary,
     WorkerContext,
 )
-from .pipeline_exception import PipelineException
 from .pipeline_stage import StageRegister
 
 if TYPE_CHECKING:
@@ -124,12 +123,12 @@ class ClassificationPipeline(Pipeline):
         )
 
         logger.info("Cache MISS starting manual classification")
-        classification_result: "ClassificationJson" = json.loads(
-            await self._integrations.llm.prompt(
-                system_prompt=system_prompt.to_prompt_text(ctx.ticket),
-                prompt=str(ticket_embed),
-            )
+        llm_response = await self._integrations.llm.prompt(
+            system_prompt=system_prompt.to_prompt_text(ctx.ticket),
+            prompt=str(ticket_embed),
         )
+
+        classification_result: "ClassificationJson" = json.loads(llm_response)
         duration_ms = stage.complete(classification_result)
         logger.info(
             "Finished LLM ticket classification in %sms",
@@ -178,17 +177,19 @@ class ClassificationPipeline(Pipeline):
         try:
             self._sentiment_per_message(ctx)
             await self._run_classifications(ctx)
-        except Exception:
+        except Exception as error:
             elapsed = stage.complete(output=ctx)
             logger.exception(
-                "Ticket pipeline failed after %sms",
+                "Ticket pipeline failed after %sms reason=%s",
                 elapsed,
+                str(error),
                 extra={
                     "ticket_id": ticket.id,
                     "duration_ms": elapsed,
+                    "reason": str(error),
                 },
             )
-            raise PipelineException(ctx=ctx, message="Failed to run pipeline")
+            raise
         elapsed = stage.complete(ctx)
         logger.info(
             "Finished ticket pipeline in %sms",

@@ -1,9 +1,12 @@
 import json
 from hashlib import md5
+from logging import getLogger
 
 from redis import Redis
 from sentence_transformers import SentenceTransformer
 from sentence_transformers.cross_encoder import CrossEncoder
+
+logger = getLogger("[encoders]")
 
 
 class Encoders:
@@ -20,7 +23,10 @@ class Encoders:
         if result is not None:
             return list(json.loads(result))
         encoded_list: list[list[float]] = list(self._transformer.encode(str).tolist())
-        self._cache.set(cache_key, json.dumps(list))
+        try:
+            self._cache.set(cache_key, json.dumps(encoded_list))
+        except Exception as error:
+            logger.error(f"Failed to create embedding error={str(error)}")
         return encoded_list
 
     def rank_pairings(self, keys: list[str], pairings: list[tuple[str, str]]):

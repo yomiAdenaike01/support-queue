@@ -37,3 +37,12 @@ var INSERT_KNOWLEDGE_BASE string
 
 //go:embed find_similar_tickets.sql
 var FIND_SIMILAR_TICKETS string
+
+//go:embed create_input_source.sql
+var CREATE_INPUT_SOURCE string
+
+//go:embed find_input_sources.sql
+var FIND_INPUT_SOURCES string
+
+//go:embed update_input_source.sql
+var UPDATE_INPUT_SOURCE string

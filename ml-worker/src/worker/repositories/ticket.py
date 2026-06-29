@@ -43,7 +43,8 @@ class TicketRepository:
 
     async def set_ticket_status(self, payload: "UpdateTicketEvent"):
         async with AsyncClient() as http:
-            response = await http.post(f"{self._base_url}/events", json=payload)
+            url = f"{self._base_url}/{payload.get('ticket_id')}/events"
+            response = await http.post(url, json=payload)
             response.raise_for_status()
             logger.info(
                 f"Updated ticket_id={payload.get('ticket_id')} payload={json.dumps(payload)}"

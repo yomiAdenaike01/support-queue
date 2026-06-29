@@ -1,0 +1,12 @@
+:80 {
+    root * /usr/share/caddy 
+    handle_path /api/* {
+        rewrite * /api/v1{path}
+        reverse_proxy srv:2342
+    }
+
+    handle {
+        try_files {path} /index.html
+        file_server
+    }
+}

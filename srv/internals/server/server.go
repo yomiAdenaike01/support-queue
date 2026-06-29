@@ -10,7 +10,7 @@ import (
 func Run(ctx context.Context, config *config.Config, handler http.Handler) {
 	srv := &http.Server{
 		Handler: handler,
-		Addr:    config.GetEnvOrDefault("SERVER_ADDR", ":2342"),
+		Addr:    config.GetEnvOrDefault("SERVER_ADDR", "0.0.0.0:2342"),
 	}
 
 	go func() {

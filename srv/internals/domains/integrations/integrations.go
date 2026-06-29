@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/yomiAdenaike01/support-queue/internals/config"
+	inputsourcesdomain "github.com/yomiAdenaike01/support-queue/internals/domains/inputsources"
 )
 
 type Platform string
@@ -14,7 +15,9 @@ const (
 )
 
 type Integrations struct {
-	Notifications *Notifications
+	Notifications    *Notifications
+	inputSourcesRepo inputsourcesdomain.Repository
+	imapClient       *ImapClient
 }
 
 type Notifications struct {
@@ -36,10 +39,15 @@ func (n *Notifications) SendNotification(ctx context.Context, input Notification
 
 }
 
-func NewIntegrations(config *config.Config) *Integrations {
-	return &Integrations{
-		Notifications: &Notifications{
-			config: config,
-		},
+func New(config *config.Config, inputSourcesRepo inputsourcesdomain.Repository) *Integrations {
+	notifications := &Notifications{
+		config: config,
 	}
+
+	integrations := &Integrations{
+		inputSourcesRepo: inputSourcesRepo,
+		Notifications:    notifications,
+		imapClient:       newImapClient(context.TODO(), inputSourcesRepo, make(chan any)),
+	}
+	return integrations
 }
