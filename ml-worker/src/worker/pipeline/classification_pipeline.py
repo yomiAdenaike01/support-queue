@@ -38,13 +38,14 @@ class ClassificationPipeline(Pipeline):
 
         self._knowledge_base = knowledge_base
 
-    def _sentiment_per_message(self, ctx: "WorkerContext") -> None:
+    def _get_average_sentiment(self, ctx: "WorkerContext") -> None:
         stage = self._stage_register.start_new_stage(
             name="sentiment-analysis", input=ctx
         )
-        average_sentiment = sum(
-            [TextBlob(msg.content).sentiment.polarity for msg in ctx.ticket.messages]
-        ) / len(ctx.ticket.messages)
+        sentiment_per_msg = [
+            TextBlob(msg.content).sentiment.polarity for msg in ctx.ticket.messages
+        ]
+        average_sentiment = sum(sentiment_per_msg) / len(ctx.ticket.messages)
         ctx.average_sentiment = average_sentiment
         duration_ms = stage.complete(average_sentiment)
         logger.info(
@@ -68,7 +69,10 @@ class ClassificationPipeline(Pipeline):
             SearchFilter(source_type="resolved_ticket", embedding=embedding)
         )
         return [
-            ResolvedTicketSummary(**json.dumps(item.content), id=item.get("sourceId"))
+            ResolvedTicketSummary(
+                **json.dumps(item.get("content") or "{}"),  # type: ignore
+                id=item.get("sourceId"),  # type: ignore
+            )
             for item in related_knowledge_list
         ]
 
@@ -101,6 +105,7 @@ class ClassificationPipeline(Pipeline):
         return []
 
     async def _get_llm_classification(self, ctx: "WorkerContext") -> ClassificationJson:
+
         stage = self._stage_register.start_new_stage(
             name="llm-classification", input=ctx
         )
@@ -128,7 +133,10 @@ class ClassificationPipeline(Pipeline):
             prompt=str(ticket_embed),
         )
 
-        classification_result: "ClassificationJson" = json.loads(llm_response)
+        if llm_response.is_empty():
+            raise Exception("LLM response is empty, please try again")
+
+        classification_result: "ClassificationJson" = llm_response.from_json()
         duration_ms = stage.complete(classification_result)
         logger.info(
             "Finished LLM ticket classification in %sms",
@@ -175,7 +183,7 @@ class ClassificationPipeline(Pipeline):
         logger.info("Starting ticket pipeline", extra={"ticket_id": ticket.id})
         ctx = WorkerContext(ticket=ticket)
         try:
-            self._sentiment_per_message(ctx)
+            self._get_average_sentiment(ctx)
             await self._run_classifications(ctx)
         except Exception as error:
             elapsed = stage.complete(output=ctx)

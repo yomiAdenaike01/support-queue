@@ -44,3 +44,7 @@ type TeamResponse struct {
 	Integrations *json.RawMessage     `json:"integrations,omitempty"`
 	Members      []TeamMemberResponse `json:"members"`
 }
+
+func (t TeamResponse) Notify() {
+
+}

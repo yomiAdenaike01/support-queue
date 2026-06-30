@@ -1,6 +1,7 @@
 package metricsdomain
 
 import (
+	"context"
 	"math"
 
 	"github.com/jmoiron/sqlx"
@@ -79,6 +80,24 @@ func percentageDiff(today, yday int) int {
 	}
 
 	return int(math.Round(float64(today-yday) / float64(yday) * 100))
+}
+
+type TicketsOvertimeInput struct {
+	StartDatetime string `form:"start_datetime" binding:"required"`
+	EndDatetime   string `form:"end_datetime" binding:"required"`
+}
+
+type TicketsOvertime struct {
+	Hour    int `json:"hour" db:"hour"`
+	Tickets int `json:"tickets" db:"tickets"`
+}
+
+func (r *Repository) GetTicketsOvertime(ctx context.Context, input TicketsOvertimeInput) ([]TicketsOvertime, error) {
+	var output []TicketsOvertime
+	if err := r.db.SelectContext(ctx, &output, queries.TICKETS_OVER_TIME, input.StartDatetime, input.EndDatetime); err != nil {
+		return nil, err
+	}
+	return output, nil
 }
 
 func NewRepository(db *sqlx.DB) *Repository {

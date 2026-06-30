@@ -2,7 +2,9 @@ package ticket
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,19 +12,25 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	integrationsdomain "github.com/yomiAdenaike01/support-queue/internals/domains/integrations"
+	teamdomain "github.com/yomiAdenaike01/support-queue/internals/domains/team"
 	redisinfra "github.com/yomiAdenaike01/support-queue/internals/infra/redis"
 )
 
 type Handler struct {
 	repository   *Repository
 	streamClient *redisinfra.StreamClient
+	teams        *teamdomain.Repository
+	integrations *integrationsdomain.Integrations
 	ctx          context.Context
 }
 
-func NewHandler(ctx context.Context, db *sqlx.DB, streamClient *redisinfra.StreamClient, repository *Repository) *Handler {
+func NewHandler(ctx context.Context, db *sqlx.DB, streamClient *redisinfra.StreamClient, repository *Repository, teams *teamdomain.Repository, integrations *integrationsdomain.Integrations) *Handler {
 	return &Handler{
 		repository:   repository,
 		streamClient: streamClient,
+		teams:        teams,
+		integrations: integrations,
 		ctx:          ctx,
 	}
 }
@@ -34,12 +42,154 @@ func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
 	group.POST("/tickets/:id/message", h.insertMessage)
 	group.POST("/tickets/:id/events", h.addEvent)
 	group.POST("/tickets/:id/resolve", h.resolveTicket)
+	group.POST("/tickets/:id/reprocess", h.reprocessTicket)
+	group.PATCH("/tickets/:id", h.updateTicket)
+	group.POST("/tickets/:id/pipeline", h.rerunPipeline)
 }
 
 type IdParam struct {
 	Id string `uri:"id" binding:"required"`
 }
 
+func (h *Handler) rerunPipeline(ctx *gin.Context) {
+	h.queueTicketForClassification(ctx, "Failed to rerun pipeline")
+}
+
+func (h *Handler) reprocessTicket(ctx *gin.Context) {
+	h.queueTicketForClassification(ctx, "Failed to reprocess ticket")
+}
+
+func (h *Handler) queueTicketForClassification(ctx *gin.Context, failureMessage string) {
+	var idParam IdParam
+	if err := ctx.ShouldBindUri(&idParam); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Id missing from params",
+		})
+	}
+	ticket, success, err := h.repository.FindById(ctx.Request.Context(), FindByIdInput{
+		TicketId:   idParam.Id,
+		Pagination: PaginationInput{},
+	})
+	if err != nil || success == false {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"error": "Failed to find ticket",
+		})
+		return
+	}
+
+	if err = h.pushToStream(ctx.Request.Context(), idParam.Id, ticket.Messages[0].Content); err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"error": failureMessage,
+		})
+		fmt.Println(err.Error())
+		return
+	}
+	ctx.Status(http.StatusOK)
+}
+func (h *Handler) updateTicket(ctx *gin.Context) {
+	var params IdParam
+
+	if err := ctx.ShouldBindUri(&params); err != nil {
+		log.Println(err.Error())
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Failed to update ticket",
+		})
+		return
+	}
+	var input UpdateTicketInput
+	if err := ctx.ShouldBindBodyWithJSON(&input); err != nil {
+		panic(err)
+	}
+
+	if err := h.repository.FindAndUpdate(ctx.Request.Context(), params.Id, input); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to update ticket",
+		})
+		return
+	}
+	if input.NotifyTeam {
+		if err := h.notifyAssignedTeam(ctx.Request.Context(), params.Id); err != nil {
+			log.Printf("Failed to notify assigned team ticket_id=%s reason=%s", params.Id, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Ticket updated but failed to notify team",
+			})
+			return
+		}
+	}
+	ctx.JSON(http.StatusOK, gin.H{})
+
+}
+
+func (h *Handler) notifyAssignedTeam(ctx context.Context, ticketId string) error {
+	if h.teams == nil || h.integrations == nil {
+		return errors.New("team notifications are not configured")
+	}
+	ticket, ok, err := h.repository.FindById(ctx, FindByIdInput{
+		TicketId:   ticketId,
+		Pagination: PaginationInput{},
+	})
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return errors.New("ticket not found")
+	}
+	if ticket.AssignedTeam == nil || *ticket.AssignedTeam == "" {
+		return errors.New("ticket has no assigned team")
+	}
+	teams, err := h.teams.Find(ctx, teamdomain.Filters{
+		Departments: []string{*ticket.AssignedTeam},
+	})
+	if err != nil {
+		return err
+	}
+	if len(teams) == 0 {
+		return fmt.Errorf("assigned team %q not found", *ticket.AssignedTeam)
+	}
+
+	for _, team := range teams {
+		if team.Integrations == nil {
+			continue
+		}
+		var teamIntegrations teamdomain.TeamIntegrations
+		if err := json.Unmarshal(*team.Integrations, &teamIntegrations); err != nil {
+			return err
+		}
+		slack := teamIntegrations.GetSlack()
+		if slack == nil || slack.GetChannelId() == nil {
+			continue
+		}
+		channelId := *slack.GetChannelId()
+		payload, err := json.Marshal(integrationsdomain.SlackNotificationData{
+			Subject:           ticket.Subject,
+			TicketID:          ticket.Id,
+			TeamName:          team.Department,
+			SuggestedResponse: nullableStringValue(ticket.SuggestedResponse),
+			Priority:          nullableStringValue(ticket.Priority),
+			Category:          nullableStringValue(ticket.Category),
+			AssignedTeam:      nullableStringValue(ticket.AssignedTeam),
+		})
+		if err != nil {
+			return err
+		}
+		if err := h.integrations.Notifications.SendNotification(ctx, integrationsdomain.NotificationInput{
+			Platform: integrationsdomain.PLATFORM_SLACK,
+			TargetId: channelId,
+			Content:  payload,
+		}); err != nil {
+			return err
+		}
+		return nil
+	}
+	return fmt.Errorf("assigned team %q has no notification channel", *ticket.AssignedTeam)
+}
+
+func nullableStringValue(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
+}
 func (h *Handler) resolveTicket(ctx *gin.Context) {
 	var params IdParam
 
@@ -110,7 +260,7 @@ type findQueryParams struct {
 
 func (f findQueryParams) toRepoFindFilters() FindFilters {
 	if f.Limit == 0 {
-		f.Limit = 20
+		f.Limit = 60
 	}
 	return FindFilters{
 		Search:   f.Search,
@@ -139,11 +289,11 @@ func (h *Handler) find(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-func (h *Handler) pushToStream(ticketId string, message string) error {
-	return h.streamClient.Push(h.ctx, redisinfra.PushEvent{
+func (h *Handler) pushToStream(ctx context.Context, ticketId string, message string) error {
+	return h.streamClient.Push(ctx, redisinfra.PushEvent{
 		EventType:  redisinfra.PUSHEVENT_TICKET_SUBMITTED,
 		StreamName: redisinfra.TICKET_CREATED,
-		Values: map[string]any{
+		Values: map[string]interface{}{
 			"ticket_id": ticketId,
 			"message":   message,
 		}})
@@ -170,7 +320,7 @@ func (h *Handler) create(ctx *gin.Context) {
 		panic(err)
 	}
 
-	err = h.pushToStream(result.TicketId, data.Message)
+	err = h.pushToStream(ctx.Request.Context(), result.TicketId, data.Message)
 	if err != nil {
 		log.Printf("Failed to push ticketId=%s reason=%s", result.TicketId, err.Error())
 	}
@@ -188,7 +338,7 @@ func (h *Handler) create(ctx *gin.Context) {
 	})
 }
 
-func toPaginationInput(page string) IPaginationInput {
+func newPaginationInput(page string) IPaginationInput {
 	defaultInput := PaginationInput{
 		Offset: 0,
 		Limit:  5,
@@ -237,7 +387,7 @@ func (h *Handler) insertMessage(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	err = h.pushToStream(ticketId, msg.Content)
+	err = h.pushToStream(ctx.Request.Context(), ticketId, msg.Content)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -250,7 +400,7 @@ func (h *Handler) findById(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"errors": "Invalid ticket id"})
 		return
 	}
-	paginationInput := toPaginationInput(ctx.Query("message_page"))
+	paginationInput := newPaginationInput(ctx.Query("message_page"))
 	ticket, ok, err := h.repository.FindById(ctx.Request.Context(), FindByIdInput{
 		TicketId:   id,
 		Pagination: paginationInput,

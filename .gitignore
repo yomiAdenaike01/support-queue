@@ -32,3 +32,4 @@ sql_datetime_practice.sql
 practice.sql
 .vscode
 .vscode/settings.json
+**/**/stages.json

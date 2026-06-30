@@ -10,21 +10,33 @@ import (
 )
 
 type Handler struct {
+	service      *Service
 	repository   *Repository
 	integrations *integrationsdomain.Integrations
 }
 
-func NewHandler(repository *Repository) *Handler {
-	return &Handler{repository: repository}
+func NewHandler(service *Service, integration *integrationsdomain.Integrations, repository *Repository) *Handler {
+	return &Handler{service: service, integrations: integration, repository: repository}
 }
 
 func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
+	group.GET("", h.list)
 	group.POST("/", h.create)
 	group.GET("/search", h.search)
 }
 
-func (h *Handler) search(ctx *gin.Context) {
+func (h *Handler) list(ctx *gin.Context) {
+	teams, err := h.service.FindTeams(ctx.Request.Context(), nil)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, teams)
+}
 
+func (h *Handler) search(ctx *gin.Context) {
 	id := ctx.Query("id")
 	departmentsAsString := strings.ReplaceAll(ctx.Query("departments"), " ", "")
 	if id == "" && departmentsAsString == "" {
@@ -42,7 +54,7 @@ func (h *Handler) search(ctx *gin.Context) {
 		departments = strings.Split(deps, ",")
 	}
 
-	team, err := h.repository.Find(ctx.Request.Context(), Filters{
+	team, err := h.service.FindTeams(ctx.Request.Context(), &Filters{
 		Id:          id,
 		Departments: departments,
 	})

@@ -1,7 +1,7 @@
 import { api, mockDelay, USE_MOCK } from "@/api/client";
 import { mockEvents } from "@/mocks/events";
 import { mockTickets } from "@/mocks/tickets";
-import type { Message, Ticket, TicketEvent, TicketFilters } from "@/types";
+import type { Message, Ticket, TicketCategory, TicketEvent, TicketFilters, TicketPriority } from "@/types";
 
 export interface CreateTicketInput {
   customerEmail: string;
@@ -14,6 +14,14 @@ export interface AddTicketMessageInput {
   customerEmail: string;
   content: string;
   role: Message["role"];
+}
+
+export interface UpdateTicketClassificationInput {
+  ticketId: string;
+  priority: TicketPriority | null;
+  category: TicketCategory | null;
+  assignedTeam: string | null;
+  notifyTeam: boolean;
 }
 
 export async function getTickets(filters: TicketFilters = {}): Promise<Ticket[]> {
@@ -110,10 +118,41 @@ export async function reprocessTicket(id: string): Promise<Ticket> {
     const ticket = await getTicket(id);
     ticket.status = "PROCESSING";
     ticket.retryCount += 1;
+    ticket.updatedAt = new Date().toISOString();
     return mockDelay(ticket);
   }
-  const { data } = await api.post<Ticket>(`/tickets/${id}/reprocess`);
-  return data;
+  await api.post(`/tickets/${id}/reprocess`);
+  return getTicket(id);
+}
+
+export async function rerunTicketPipeline(id: string): Promise<void> {
+  if (USE_MOCK) {
+    const ticket = await getTicket(id);
+    ticket.status = "PROCESSING";
+    ticket.retryCount += 1;
+    ticket.updatedAt = new Date().toISOString();
+    await mockDelay(undefined);
+    return;
+  }
+  await api.post(`/tickets/${id}/pipeline`);
+}
+
+export async function updateTicketClassification(input: UpdateTicketClassificationInput): Promise<Ticket> {
+  if (USE_MOCK) {
+    const ticket = await getTicket(input.ticketId);
+    ticket.priority = input.priority;
+    ticket.category = input.category;
+    ticket.assignedTeam = input.assignedTeam;
+    ticket.updatedAt = new Date().toISOString();
+    return mockDelay(ticket);
+  }
+  await api.patch(`/tickets/${input.ticketId}`, {
+    priority: input.priority,
+    category: input.category,
+    assigned_teams: input.assignedTeam,
+    notify_team: input.notifyTeam,
+  });
+  return getTicket(input.ticketId);
 }
 
 export async function resolveTicket(id: string): Promise<Ticket> {

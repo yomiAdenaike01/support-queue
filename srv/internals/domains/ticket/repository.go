@@ -144,25 +144,26 @@ func nullableTimePtr(nullableTime sql.NullTime) *time.Time {
 }
 
 type UpdateTicketInput struct {
-	SuggestedResponse *string
-	Status            *string
-	AverageSentiment  *float32
-	Priority          *string
-	Category          *string
-	RequiresUrgency   *bool
-	UrgencyReason     *string
-	AssignedTeam      *string
+	SuggestedResponse *string  `json:"suggested_response"`
+	Status            *string  `json:"status"`
+	AverageSentiment  *float32 `json:"average_sentiment"`
+	Priority          *string  `json:"priority"`
+	Category          *string  `json:"category"`
+	RequiresUrgency   *bool    `json:"requires_urgency"`
+	UrgencyReason     *string  `json:"urgency_reason"`
+	AssignedTeam      *string  `json:"assigned_teams"`
+	NotifyTeam        bool     `json:"notify_team"`
 }
 
 func (r *Repository) FindAndUpdate(ctx context.Context, id string, update UpdateTicketInput) error {
 	res, err := r.db.ExecContext(ctx, `UPDATE tickets 
 	 SET suggested_response = COALESCE($1::TEXT,suggested_response),
-	 	average_sentiment = COALESCE($2::INT, average_sentiment),
+	 	sentiment_score = COALESCE($2::INT, sentiment_score),
 		priority = COALESCE($3::TEXT, priority),
 		category = COALESCE($4::TEXT, category),
-		requires_urgency = COALESCE($5, requires_urgency),
+		urgency_flag = COALESCE($5, urgency_flag),
 		urgency_reason = COALESCE($6::TEXT, urgency_reason),
-		assigned_team = COALESCE($7::TEXT, assigned_team)
+		assigned_team = COALESCE($7::TEXT, assigned_team),
 		status = COALESCE($8::TEXT, status)
 	WHERE id = $9
 	RETURNING *

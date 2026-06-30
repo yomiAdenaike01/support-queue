@@ -32,9 +32,14 @@ export async function seedTickets(count: number): Promise<{ count: number }> {
 }
 
 export async function startSimulator(): Promise<{ started: boolean }> {
-  if (USE_MOCK) return mockDelay({ started: true });
-  const { data } = await api.post<{ started: boolean }>("/simulator/start");
-  return data;
+  await Promise.all(Array.from({ length: 20 }).map(() => {
+    return randomTicket()
+  }))
+  return {
+    started: true
+  }
+  // const { data } = await api.post<{ started: boolean }>("/simulator/start");
+  // return data;
 }
 
 export async function stopSimulator(): Promise<{ stopped: boolean }> {

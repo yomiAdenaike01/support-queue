@@ -46,3 +46,6 @@ var FIND_INPUT_SOURCES string
 
 //go:embed update_input_source.sql
 var UPDATE_INPUT_SOURCE string
+
+//go:embed tickets_over_time.sql
+var TICKETS_OVER_TIME string

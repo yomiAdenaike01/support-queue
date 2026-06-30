@@ -3,12 +3,18 @@ from logging import getLogger
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from ..repositories import ClassificationResult, UpdateTicketEvent
+from ..repositories import (
+    ClassificationResult,
+    TicketEventStatus,
+    TicketStatus,
+    UpdateTicketEvent,
+)
 
 if TYPE_CHECKING:
     from ..event_bus import StreamEvent
     from ..pipeline import WorkerContext
     from .models import QueueDependencies
+
 logger = getLogger("[classification-queue]")
 
 
@@ -28,7 +34,7 @@ class ClassificationQueue:
             ticket_id=ctx.ticket.id,
             suggested_response=ctx.suggested_response,
             average_sentiment=ctx.average_sentiment,
-            priority=str(ctx.priority),
+            priority=ctx.priority.value if ctx.priority is not None else None,
             category=ctx.category,
             requires_urgency=ctx.requires_urgency,
             urgency_reason=ctx.urgency_reason,
@@ -36,6 +42,7 @@ class ClassificationQueue:
 
     async def __work(self, id: str):
         max_attempts = int(self._deps.config.get("MAX_ATTEMPTS"))
+        ticket_id = None
         while True:
             event = await self._queue.get()
             for attempt in range(max_attempts):
@@ -50,7 +57,9 @@ class ClassificationQueue:
 
                     await self._deps.ticket_repository.set_ticket_status(
                         UpdateTicketEvent(
-                            ticket_id=ticket.id, status="TICKET_PROCESSED"
+                            ticket_id=ticket.id,
+                            event_status=TicketEventStatus.PROCESSING,
+                            status=TicketStatus.PROCESSING,
                         )
                     )
                     result = await self._deps.pipeline.run(ticket)
@@ -61,12 +70,30 @@ class ClassificationQueue:
                     )
                     self._deps.event_bus.ack_classification(message_id=event.id)
                     self._queue.task_done()
+
+                    await self._deps.ticket_repository.set_ticket_status(
+                        UpdateTicketEvent(
+                            ticket_id=ticket_id,
+                            status=TicketStatus.PROCESSED,
+                            event_status=TicketEventStatus.CLASSIFIED,
+                        )
+                    )
                     break
                 except Exception as error:
-                    logger.error(
+                    logger.exception(
                         f"[classification-worker-{id}]: Failed worker task error=%s",
                         str(error),
                     )
+                    if attempt + 1 == max_attempts and ticket_id is not None:
+                        await self._deps.ticket_repository.set_ticket_status(
+                            UpdateTicketEvent(
+                                ticket_id=ticket_id,
+                                event_status=TicketEventStatus.FAILED,
+                                status=TicketStatus.FAILED,
+                            )
+                        )
+                        self._queue.task_done()
+                        break
                     continue
 
     async def add_to_queue(self, data: "StreamEvent"):

@@ -69,14 +69,13 @@ func fetchNewMessages(client *imapclient.Client) {
 			continue
 		}
 		for _, message := range messages {
-			sub := message.Envelope.Subject
+			// sub := message.Envelope.Subject
 			body := message.FindBodySection(&imap.FetchItemBodySection{})
 			reader := bytes.NewReader(body)
-			text, err := io.ReadAll(reader)
+			_, err := io.ReadAll(reader)
 			if err != nil {
 				panic(err)
 			}
-			log.Printf("subject=%s", text, sub)
 
 		}
 	}

@@ -1,5 +1,11 @@
 import type { ReactNode } from "react";
-import type { SentimentLabel, TicketCategory, TicketPriority, TicketStatus, WorkerStatus } from "@/types";
+import type {
+  SentimentLabel,
+  TicketCategory,
+  TicketPriority,
+  TicketStatus,
+  WorkerStatus,
+} from "@/types";
 import { priorityClasses, PRIORITY_CONFIG } from "@/utils/priority";
 import { statusClasses, STATUS_CONFIG } from "@/utils/status";
 
@@ -25,24 +31,64 @@ interface BadgeProps {
 }
 
 export function Badge({ children, className = "" }: BadgeProps) {
-  return <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${className}`}>{children}</span>;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${className}`}
+    >
+      {children}
+    </span>
+  );
 }
 
-export function StatusBadge({ status }: { status: TicketStatus | WorkerStatus }) {
-  const label = status in STATUS_CONFIG ? STATUS_CONFIG[status as TicketStatus].label : status;
+export function StatusBadge({
+  status,
+}: {
+  status: TicketStatus | WorkerStatus;
+}) {
+  console.log({ status });
+  const label =
+    status in STATUS_CONFIG
+      ? STATUS_CONFIG[status as TicketStatus].label
+      : status;
   return <Badge className={statusClasses[status]}>{label}</Badge>;
 }
 
-export function PriorityBadge({ priority }: { priority: TicketPriority | null }) {
-  if (!priority) return <Badge className="border-slate-600 bg-slate-800 text-slate-400">Unscored</Badge>;
-  return <Badge className={priorityClasses[priority]}>{PRIORITY_CONFIG[priority].label}</Badge>;
+export function PriorityBadge({
+  priority,
+}: {
+  priority: TicketPriority | null;
+}) {
+  if (!priority)
+    return (
+      <Badge className="border-slate-600 bg-slate-800 text-slate-400">
+        Unscored
+      </Badge>
+    );
+  return (
+    <Badge className={priorityClasses[priority]}>
+      {PRIORITY_CONFIG[priority].label}
+    </Badge>
+  );
 }
 
 export function CategoryBadge({ category }: { category: TicketCategory }) {
-  return <Badge className={categoryClasses[category]}>{category.replace("_", " ")}</Badge>;
+  return (
+    <Badge className={categoryClasses[category]}>
+      {category.replace("_", " ")}
+    </Badge>
+  );
 }
 
-export function SentimentBadge({ sentiment }: { sentiment: SentimentLabel | null }) {
-  if (!sentiment) return <Badge className="border-slate-600 bg-slate-800 text-slate-400">Pending</Badge>;
+export function SentimentBadge({
+  sentiment,
+}: {
+  sentiment: SentimentLabel | null;
+}) {
+  if (!sentiment)
+    return (
+      <Badge className="border-slate-600 bg-slate-800 text-slate-400">
+        Pending
+      </Badge>
+    );
   return <Badge className={sentimentClasses[sentiment]}>{sentiment}</Badge>;
 }

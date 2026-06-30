@@ -10,6 +10,19 @@ import type {
   TeamsChannel,
 } from "@/types";
 
+interface BackendTeam {
+  id: string;
+  department: string;
+  integrations?: Record<string, unknown> | null;
+  members?: Array<{
+    id: string;
+    name: string;
+    role: TeamMemberRole;
+    email_address?: string | null;
+    phone_number?: string | null;
+  }>;
+}
+
 export interface InviteMemberInput {
   name: string;
   email: string;
@@ -18,8 +31,8 @@ export interface InviteMemberInput {
 
 export async function getTeams(): Promise<Team[]> {
   if (USE_MOCK) return mockDelay(mockTeams);
-  const { data } = await api.get<Team[]>("/teams");
-  return data;
+  const { data } = await api.get<BackendTeam[]>("/team");
+  return data.map(toTeam);
 }
 
 export async function getTeam(id: string): Promise<Team> {
@@ -30,6 +43,31 @@ export async function getTeam(id: string): Promise<Team> {
   }
   const { data } = await api.get<Team>(`/teams/${id}`);
   return data;
+}
+
+function toTeam(team: BackendTeam): Team {
+  return {
+    id: team.id,
+    department: team.department,
+    categories: [],
+    integrations: {
+      slackWebhook: null,
+      slackChannelId: null,
+      slackChannelName: null,
+      teamsWebhook: null,
+      teamsChannelId: null,
+      teamsChannelName: null,
+    },
+    members: (team.members ?? []).map((member) => ({
+      id: member.id,
+      name: member.name,
+      role: member.role,
+      emailAddress: member.email_address ?? null,
+      phoneNumber: member.phone_number ?? null,
+      integrations: { slackId: null, teamsId: null },
+    })),
+    createdAt: new Date().toISOString(),
+  };
 }
 
 export async function createTeam(input: CreateTeamPayload): Promise<Team> {

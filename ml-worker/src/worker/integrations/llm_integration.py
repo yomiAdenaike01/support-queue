@@ -1,7 +1,7 @@
 import json
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, Optional, TypedDict
 
 from httpx import AsyncClient
 
@@ -11,6 +11,28 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from redis import Redis
+
+
+@dataclass
+class LLMResponse:
+    response: Optional[str]
+
+    def from_json(self) -> Optional[Any]:
+        try:
+            return (
+                json.loads(self.response, strict=False)
+                if self.response is not None
+                else None
+            )
+        except Exception as error:
+            logger.exception("Failed to parse llm response reason=%s", str(error))
+            return None
+
+    def is_empty(self) -> bool:
+        return (
+            len("" if self.response is None else self.response) == 0
+            or self.response is None
+        )
 
 
 class LLMMessage(TypedDict):
@@ -63,7 +85,7 @@ class LLMIntegration:
         result = self._cache.get(str_hash)
         return str(result) if result is not None else None
 
-    async def prompt(self, system_prompt: str, prompt: str) -> str:
+    async def prompt(self, system_prompt: str, prompt: str) -> "LLMResponse":
 
         url = f"{self._options.base_url}/chat/completions"
         body: LLMRequestBody = {
@@ -77,7 +99,7 @@ class LLMIntegration:
         cached_response = self._get_cached_response(body_str)
 
         if cached_response is not None:
-            return cached_response
+            return LLMResponse(response=cached_response)
 
         timer = Timer()
         logger.info(
@@ -104,10 +126,13 @@ class LLMIntegration:
                     },
                 )
                 response.raise_for_status()
+
                 data = response.json()
                 content = data["choices"][0]["message"]["content"]
+                is_response_defined = len(content) > 0 or content is not None
 
-                self._cache.set(f"prompt:{self._hash(body_str)}", content)
+                if is_response_defined:
+                    self._cache.set(f"prompt:{self._hash(body_str)}", content)
 
                 logger.info(f"LLM Response: {content}")
                 logger.info(
@@ -120,7 +145,7 @@ class LLMIntegration:
                         "duration_ms": duration_ms,
                     },
                 )
-                return content
+                return LLMResponse(response=content if is_response_defined else None)
         except Exception:
             duration_ms = timer.elapsed()
             logger.exception(

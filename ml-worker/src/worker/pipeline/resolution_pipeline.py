@@ -1,4 +1,3 @@
-import json
 from logging import getLogger
 from typing import TYPE_CHECKING
 
@@ -54,7 +53,12 @@ class ResolutionPipeline(Pipeline):
         response = await self._integrations.llm.prompt(
             system_prompt=RESOLUTION_SYSTEM_PROMPT, prompt=summary
         )
-        return ResolvedTicketSummary(**json.loads(response))
+        if response.is_empty():
+            raise Exception("LLM Response is empty, please try again")
+        response_as_json = response.from_json()
+        return ResolvedTicketSummary(
+            **response_as_json if response_as_json is not None else {}  # type: ignore
+        )
 
     async def run(self, ticket: "Ticket"):
         logger.info(f"Running pipeline on ticket={ticket.id}")

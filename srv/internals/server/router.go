@@ -39,7 +39,7 @@ func NewRouter(deps RouterDependencies) *gin.Engine {
 	ticketRepository := ticketdomain.NewRepository(deps.DB)
 
 	teamRepository := teamdomain.NewRepository(deps.DB)
-	teamHandler := teamdomain.NewHandler(teamRepository)
+	teamHandler := teamdomain.NewHandler(teamdomain.NewService(teamRepository, integrations), integrations, teamRepository)
 	teamHandler.RegisterRoutes(v1.Group("/team"))
 
 	metricsRepository := metricsdomain.NewRepository(deps.DB)
@@ -57,7 +57,7 @@ func NewRouter(deps RouterDependencies) *gin.Engine {
 	knowledgeBaseHandler := knowledgebasedomain.NewHandler(knowledgeBaseRepository)
 	knowledgeBaseHandler.RegisterRoutes(v1.Group("/knowledge"))
 
-	ticketHandler := ticketdomain.NewHandler(deps.Context, deps.DB, deps.StreamClient, ticketRepository)
+	ticketHandler := ticketdomain.NewHandler(deps.Context, deps.DB, deps.StreamClient, ticketRepository, teamRepository, integrations)
 	ticketHandler.RegisterRoutes(v1)
 
 	return g

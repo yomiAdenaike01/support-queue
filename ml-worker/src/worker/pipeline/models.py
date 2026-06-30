@@ -24,7 +24,9 @@ CATEGORIES = [
 class ClassificationSystemPromptInput:
     sentiment: float
     categories: list[str] = field(default_factory=lambda: list(CATEGORIES))
-    previous_cases: list["ResolvedTicketSummary"] = field(default_factory=list)
+    previous_cases: list["ResolvedTicketSummary"] = field(
+        default_factory=lambda: list["ResolvedTicketSummary"]()
+    )
 
     def to_prompt_text(self, ticket: "Ticket"):
         previous_cases_list = (
