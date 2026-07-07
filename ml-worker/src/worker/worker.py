@@ -46,7 +46,7 @@ class Worker:
 
         redis_client = init_redis_client(redis_url)
         integrations = Integrations(cache=redis_client)
-        knowledge_base = KnowledgeBase(base_url=base_url)
+        knowledge_base = KnowledgeBase(base_url=f"{base_url}/knowledge")
         ticket_repository = TicketRepository(base_url=f"{base_url}/tickets")
         worker_repository = WorkerRepository(base_url=base_url)
         event_bus = EventBus(redis_client=redis_client)

@@ -1,3 +1,4 @@
+import json
 from logging import getLogger
 from typing import TYPE_CHECKING
 
@@ -72,5 +73,5 @@ class ResolutionPipeline(Pipeline):
         )
         logger.info(f"Successfully created embedding ticket id={ticket.id}")
         await self._knowledge_base.insert_resolved_ticket(
-            id=ticket.id, content=embedding_json, embedding=embedding
+            id=ticket.id, content=json.loads(embedding_json), embedding=embedding
         )

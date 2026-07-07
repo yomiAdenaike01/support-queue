@@ -18,7 +18,7 @@ func NewHandler(repository *Repository) *Handler {
 
 func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
 	group.POST("/", h.create)
-	group.GET("/search/", h.search)
+	group.POST("/search/", h.search)
 }
 
 func (h *Handler) create(ctx *gin.Context) {
@@ -41,10 +41,10 @@ func (h *Handler) create(ctx *gin.Context) {
 }
 
 type searchFilter struct {
-	Id         *string `uri:"id"`
-	Embedding  *string `uri:"embedding"`
-	Limit      *int    `uri:"limit"`
-	SourceType *string `uri:"source_type"`
+	Id         *string `json:"id"`
+	Embedding  *string `json:"embedding"`
+	Limit      *int    `json:"limit"`
+	SourceType *string `json:"source_type"`
 }
 
 func (s searchFilter) toSearchInput() (searchInput, error) {
@@ -53,9 +53,13 @@ func (s searchFilter) toSearchInput() (searchInput, error) {
 	if err != nil {
 		return search, err
 	}
+	limit := 0
+	if s.Limit != nil {
+		limit = *s.Limit
+	}
 	return searchInput{
 			Embedding:  embedding,
-			Limit:      *s.Limit,
+			Limit:      limit,
 			SourceType: s.SourceType,
 			Id:         s.Id,
 		},
@@ -63,7 +67,7 @@ func (s searchFilter) toSearchInput() (searchInput, error) {
 }
 
 func (f searchFilter) getEmbedding() ([]float32, error) {
-	if len(*f.Embedding) == 0 {
+	if f.Embedding == nil || len(*f.Embedding) == 0 {
 		return nil, nil
 	}
 	rawStr, err := base64.StdEncoding.DecodeString(*f.Embedding)
@@ -80,7 +84,7 @@ func (f searchFilter) getEmbedding() ([]float32, error) {
 
 func (h *Handler) search(ctx *gin.Context) {
 	var filter searchFilter
-	if err := ctx.ShouldBindUri(&filter); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&filter); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -100,5 +104,5 @@ func (h *Handler) search(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusFound, sources)
+	ctx.JSON(http.StatusOK, sources)
 }

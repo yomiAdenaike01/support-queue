@@ -156,12 +156,6 @@ export async function updateTicketClassification(input: UpdateTicketClassificati
 }
 
 export async function resolveTicket(id: string): Promise<Ticket> {
-  if (USE_MOCK) {
-    const ticket = await getTicket(id);
-    ticket.status = "RESOLVED";
-    ticket.updatedAt = new Date().toISOString();
-    return mockDelay(ticket);
-  }
   const { data } = await api.post<Ticket>(`/tickets/${id}/resolve`);
   return data;
 }

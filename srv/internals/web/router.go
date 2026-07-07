@@ -27,6 +27,7 @@ type Dependencies struct {
 
 func New(deps Dependencies) *gin.Engine {
 	g := gin.Default()
+	g.ContextWithFallback = true
 	v1 := g.Group("/api/v1")
 
 	v1.GET("healthz", func(ctx *gin.Context) {

@@ -29,6 +29,7 @@ type GmailClient struct {
 	inputSourceRepository inputsourcesdomain.Repository
 	out                   chan<- TicketPayload
 	providers             *oauth.Providers
+	seen                  map[string]struct{}
 }
 
 type GmailMessage struct {
@@ -196,7 +197,7 @@ func getMessage(ctx context.Context, accessToken string, id string) (GmailMessag
 	}, nil
 }
 
-func fetchLatestMessages(ctx context.Context, accessToken string, maxResults int) []GmailMessage {
+func fetchLatestMessages(ctx context.Context, accessToken string, maxResults int, seen map[string]struct{}) []GmailMessage {
 	ids, err := listLatestMessageIds(ctx, accessToken, maxResults)
 	if err != nil {
 		log.Printf("Failed to list gmail messages error=%s", err.Error())
@@ -204,7 +205,12 @@ func fetchLatestMessages(ctx context.Context, accessToken string, maxResults int
 	}
 	messages := make([]GmailMessage, 0, len(ids))
 	for _, id := range ids {
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
 		message, err := getMessage(ctx, accessToken, id)
+
 		if errors.Is(err, errNotTicketWorthy) {
 			continue
 		}
@@ -249,7 +255,7 @@ func (g *GmailClient) fetchAndForward(ctx context.Context) {
 		return
 	}
 
-	for _, message := range fetchLatestMessages(ctx, accessToken, 10) {
+	for _, message := range fetchLatestMessages(ctx, accessToken, 10, g.seen) {
 		g.out <- message
 	}
 }
@@ -279,6 +285,7 @@ func newGmailClient(ctx context.Context, deps emailIntegrationDeps) *GmailClient
 		inputSourceRepository: deps.repository,
 		out:                   deps.onNewEmail,
 		providers:             deps.oauthProviders,
+		seen:                  map[string]struct{}{},
 	}
 	go client.poll(ctx)
 	return client

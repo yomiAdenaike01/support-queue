@@ -10,7 +10,7 @@ class RelatedKnowledgeResponse(TypedDict):
     sourceId: str
     metadata: str
     sourceType: str
-    content: str
+    content: dict[str, object]
 
 
 class KnowledgeBase:
@@ -22,8 +22,8 @@ class KnowledgeBase:
     async def search(self, filter: "Filter") -> list["RelatedKnowledgeResponse"]:
         try:
             async with AsyncClient() as http:
-                url = f"{self._base_url}/knowledge/?{filter.to_qs()}"
-                response = await http.get(url)
+                url = f"{self._base_url}/search/"
+                response = await http.post(url, json=filter.to_dict())
                 response.raise_for_status()
                 related_knowledge_list: list["RelatedKnowledgeResponse"] = (
                     response.json()
@@ -35,10 +35,10 @@ class KnowledgeBase:
             return []
 
     async def insert_resolved_ticket(
-        self, id: str, content: str, embedding: list[list[float]]
+        self, id: str, content: dict[str, object], embedding: list[list[float]]
     ) -> Optional[str]:
         async with AsyncClient() as http:
-            url = f"{self._base_url}/knowledge/"
+            url = f"{self._base_url}/"
             response = await http.post(
                 url=url,
                 json={

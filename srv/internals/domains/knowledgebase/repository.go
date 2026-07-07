@@ -44,7 +44,7 @@ func (r *Repository) Create(ctx context.Context, input CreateRequest) (DbCreateK
 }
 
 func (r *Repository) Find(ctx context.Context, search searchInput) ([]DbCreateKnowledgeBaseRow, error) {
-	var dest []DbCreateKnowledgeBaseRow
+	dest := []DbCreateKnowledgeBaseRow{}
 	var embedding pgvector.Vector
 	if search.Embedding != nil {
 		embedding = pgvector.NewVector(search.Embedding)

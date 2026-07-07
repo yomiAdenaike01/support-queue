@@ -1,0 +1,562 @@
+[
+  {
+    "pair_id": 1,
+    "category": "BILLING",
+    "ticket_a": {
+      "customerEmail": "james.thornton@gmail.com",
+      "subject": "Charged twice for the same order",
+      "message": "Hi, I've just checked my bank statement and I can see two identical charges of £67.99 taken this morning for order #8821. I only placed one order. Please refund the duplicate charge as soon as possible as this has left me short for the week."
+    },
+    "ticket_b": {
+      "customerEmail": "r.delacroix@outlook.com",
+      "subject": "Double billed on my last purchase",
+      "message": "My card was charged twice for order #9042 - two identical £52.40 transactions within a minute of each other. Can you refund the second charge please? I have the bank statement showing both if you need proof."
+    }
+  },
+  {
+    "pair_id": 2,
+    "category": "BILLING",
+    "ticket_a": {
+      "customerEmail": "sophie.baker@icloud.com",
+      "subject": "Charged after I cancelled my subscription",
+      "message": "I cancelled my subscription last month and got a confirmation email, but I was just charged £14.99 again today. I definitely cancelled before the renewal date. Please refund this and confirm my subscription is actually cancelled."
+    },
+    "ticket_b": {
+      "customerEmail": "toby.mercer@yahoo.com",
+      "subject": "Billed even though I already cancelled",
+      "message": "I cancelled weeks ago and still received a charge this morning for £14.99. I have the cancellation confirmation email if that helps. Please can you reverse the charge and make sure I'm not billed again next month?"
+    }
+  },
+  {
+    "pair_id": 3,
+    "category": "BILLING",
+    "ticket_a": {
+      "customerEmail": "grace.n@hotmail.com",
+      "subject": "Discount code not applying at checkout",
+      "message": "I have a 25% off code WELCOME25 that isn't applying at checkout. I've tried on both the website and the app, over several sessions, and it keeps saying the code is invalid even though the email says it's valid until the end of the month."
+    },
+    "ticket_b": {
+      "customerEmail": "oliver.pham@gmail.com",
+      "subject": "Promo code rejected at checkout",
+      "message": "The discount code from your newsletter keeps getting rejected when I try to use it, even though the email clearly says it's still active. I've tried retyping it a few times in case of a typo but it's the same code each time. Can you check what's going on?"
+    }
+  },
+  {
+    "pair_id": 4,
+    "category": "BILLING",
+    "ticket_a": {
+      "customerEmail": "amelia.ross@gmail.com",
+      "subject": "Refund never arrived after return",
+      "message": "I returned an item three weeks ago and the tracking confirms it was delivered back to your warehouse, but I still haven't received my £38 refund. Can someone look into this and let me know when it will be processed?"
+    },
+    "ticket_b": {
+      "customerEmail": "d.kowalski@outlook.com",
+      "subject": "Still waiting on my refund",
+      "message": "I sent an item back over two weeks ago, and your own tracking shows it arrived at your returns centre, but the refund hasn't shown up on my card yet. Could you check the status and process it please?"
+    }
+  },
+  {
+    "pair_id": 5,
+    "category": "BILLING",
+    "ticket_a": {
+      "customerEmail": "henry.ojo@gmail.com",
+      "subject": "Invoice missing VAT breakdown",
+      "message": "I need a proper VAT invoice for my last order for expensing purposes, but the receipt I was emailed just shows a total with no tax breakdown. Could you send me a corrected invoice showing the VAT amount separately?"
+    },
+    "ticket_b": {
+      "customerEmail": "linda.chao@business.com",
+      "subject": "Need VAT itemised on my receipt",
+      "message": "Our accounts team needs the VAT shown separately on the invoice for order #5521 but the PDF we received only has a single total line. Would it be possible to reissue it with the tax itemised?"
+    }
+  },
+  {
+    "pair_id": 6,
+    "category": "BILLING",
+    "ticket_a": {
+      "customerEmail": "priya.nair@hotmail.co.uk",
+      "subject": "Charged in the wrong currency",
+      "message": "My statement shows I was charged in USD instead of GBP, and the conversion has cost me an extra £6 on the transaction. My account settings clearly show GBP as my currency. Can this be corrected?"
+    },
+    "ticket_b": {
+      "customerEmail": "marcus.venn@gmail.com",
+      "subject": "Billed in USD instead of my local currency",
+      "message": "I noticed my last payment went through in US dollars rather than pounds, which meant I paid more due to the conversion fee. My billing address and settings are all set to the UK. Can you fix this and refund the difference?"
+    }
+  },
+  {
+    "pair_id": 7,
+    "category": "BILLING",
+    "ticket_a": {
+      "customerEmail": "dan.walsh92@outlook.com",
+      "subject": "Charged annually instead of monthly",
+      "message": "I signed up for the monthly plan but was just charged £180, which looks like the full annual price. I never selected annual billing. Can you switch me back to monthly and refund the difference?"
+    },
+    "ticket_b": {
+      "customerEmail": "keisha.brown@gmail.com",
+      "subject": "Billed for a year when I wanted monthly",
+      "message": "I definitely picked the monthly option when I signed up but got charged £180 today, which matches the yearly price. Please switch my plan to monthly billing and refund whatever the difference is."
+    }
+  },
+  {
+    "pair_id": 8,
+    "category": "ACCOUNT_ACCESS",
+    "ticket_a": {
+      "customerEmail": "alice@example.com",
+      "subject": "Password reset link expired",
+      "message": "Hi, I requested a password reset email but the link inside it says it has expired even though I clicked it within a minute of receiving it. Can you help me reset my password?"
+    },
+    "ticket_b": {
+      "customerEmail": "bob@example.com",
+      "subject": "Reset link not working",
+      "message": "I tried to reset my password using the emailed link but it tells me the link already expired, even though I only just got the email. Please help me get a working reset link."
+    }
+  },
+  {
+    "pair_id": 9,
+    "category": "ACCOUNT_ACCESS",
+    "ticket_a": {
+      "customerEmail": "m.okonkwo@yahoo.com",
+      "subject": "Locked out after failed login attempts",
+      "message": "My account got locked after I mistyped my password a few times. I know my correct password now but the login page just says the account is temporarily locked. Can you unlock it? I have an order arriving tomorrow I need to check."
+    },
+    "ticket_b": {
+      "customerEmail": "faith.abara@gmail.com",
+      "subject": "Account locked out, need urgent access",
+      "message": "After a few wrong password attempts my account is now locked and won't let me back in even with the right password. I need to get in today to update my delivery address. Please unlock my account."
+    }
+  },
+  {
+    "pair_id": 10,
+    "category": "ACCOUNT_ACCESS",
+    "ticket_a": {
+      "customerEmail": "carlos.mendes@gmail.com",
+      "subject": "Two-factor authentication code never arrives",
+      "message": "Every time I try to log in I'm asked for a 2FA code by SMS, but the text never arrives. I've waited over ten minutes and requested it three times. I'm completely locked out of my account as a result."
+    },
+    "ticket_b": {
+      "customerEmail": "nina.holt@outlook.com",
+      "subject": "Never receive my login verification code",
+      "message": "The verification text for two-factor login never shows up on my phone, no matter how many times I hit resend. My signal is fine and I'm getting other texts normally. I can't get into my account without this code."
+    }
+  },
+  {
+    "pair_id": 11,
+    "category": "ACCOUNT_ACCESS",
+    "ticket_a": {
+      "customerEmail": "j.fairweather@gmail.com",
+      "subject": "Forgot which email my account uses",
+      "message": "I have two email addresses and can't remember which one I used to sign up years ago. Neither one works on the password reset page. Is there another way to find or verify my account?"
+    },
+    "ticket_b": {
+      "customerEmail": "wendy.tran@hotmail.com",
+      "subject": "Not sure which email is tied to my account",
+      "message": "I've tried both of my usual email addresses on the login and reset pages and neither is recognised. I know I have an account because I've ordered before. How can I find out which email it's registered under?"
+    }
+  },
+  {
+    "pair_id": 12,
+    "category": "ACCOUNT_ACCESS",
+    "ticket_a": {
+      "customerEmail": "oscar.lindqvist@company.com",
+      "subject": "SSO login stuck in a redirect loop",
+      "message": "When I try to log in through single sign-on with my work Google account, the page just redirects back and forth between your login page and Google without ever letting me in. Regular email login isn't set up for my account."
+    },
+    "ticket_b": {
+      "customerEmail": "priya.desai@company.com",
+      "subject": "Google SSO keeps looping on login",
+      "message": "Trying to sign in with 'Login with Google' just bounces between your site and the Google auth screen repeatedly and never completes. I don't have a password set up since I always use SSO."
+    }
+  },
+  {
+    "pair_id": 13,
+    "category": "ACCOUNT_ACCESS",
+    "ticket_a": {
+      "customerEmail": "beatrice.olsen@gmail.com",
+      "subject": "Account flagged, can't log in",
+      "message": "I tried logging in from a hotel Wi-Fi while travelling and now it says my account has been flagged for suspicious activity and access is blocked. It's really me, I just changed location. How do I get this unblocked?"
+    },
+    "ticket_b": {
+      "customerEmail": "samuel.iwu@gmail.com",
+      "subject": "Locked out after logging in abroad",
+      "message": "I logged in while on holiday and now I'm getting a message saying my account was locked for suspicious login activity. It was definitely me logging in, just from a different country. Please can you restore my access?"
+    }
+  },
+  {
+    "pair_id": 14,
+    "category": "ACCOUNT_ACCESS",
+    "ticket_a": {
+      "customerEmail": "florence.attah@gmail.com",
+      "subject": "Old email no longer works for password reset",
+      "message": "My account is registered to an old work email I no longer have access to, so the password reset emails go nowhere. I still remember my last password partially but it's not enough to log in. How can I update my email without logging in first?"
+    },
+    "ticket_b": {
+      "customerEmail": "gareth.hume@gmail.com",
+      "subject": "Can't reset password, old email is dead",
+      "message": "The email address on my account was shut down by my old employer, so I never get the password reset link. I can't log in and can't change the email without logging in. What's the process to recover the account?"
+    }
+  },
+  {
+    "pair_id": 15,
+    "category": "TECHNICAL",
+    "ticket_a": {
+      "customerEmail": "m.okonkwo2@yahoo.com",
+      "subject": "App crashes every time I open it",
+      "message": "Your app has been crashing on my phone for the past three days. Every time I open it, it loads for about two seconds then just closes itself. I've tried uninstalling and reinstalling twice and it's still happening."
+    },
+    "ticket_b": {
+      "customerEmail": "yusuf.demir@gmail.com",
+      "subject": "Mobile app closes immediately on open",
+      "message": "Since the latest update, the app crashes within a second or two of opening every single time. I've deleted and reinstalled it twice with no change. It worked fine before the update."
+    }
+  },
+  {
+    "pair_id": 16,
+    "category": "TECHNICAL",
+    "ticket_a": {
+      "customerEmail": "isabel.marchetti@gmail.com",
+      "subject": "Checkout page throws an error",
+      "message": "Whenever I try to complete checkout I get a 'something went wrong, error 500' message and the page won't proceed. I've tried on both Chrome and Safari with the same result. My cart still has the items in it though."
+    },
+    "ticket_b": {
+      "customerEmail": "peter.novak@gmail.com",
+      "subject": "Error when trying to pay at checkout",
+      "message": "I keep hitting a server error on the payment step of checkout, it just says an error occurred and to try again later, but it happens every time regardless of browser. Everything else on the site works fine."
+    }
+  },
+  {
+    "pair_id": 17,
+    "category": "TECHNICAL",
+    "ticket_a": {
+      "customerEmail": "clara.eriksson@gmail.com",
+      "subject": "File upload always fails near the end",
+      "message": "I'm trying to upload a document to my account and it gets to 99% every time then fails with a generic error. I've tried different file formats and it's the same result. The file is only 4MB so it shouldn't be a size issue."
+    },
+    "ticket_b": {
+      "customerEmail": "tom.fitzgerald@gmail.com",
+      "subject": "Upload stalls right before finishing",
+      "message": "Every upload I attempt gets almost all the way to 100% and then throws an error and fails. I've tried multiple files, all well under any size limit mentioned on your site. This has happened at least five times now."
+    }
+  },
+  {
+    "pair_id": 18,
+    "category": "TECHNICAL",
+    "ticket_a": {
+      "customerEmail": "naomi.chukwu@gmail.com",
+      "subject": "Dark mode setting doesn't stick",
+      "message": "Every time I turn on dark mode in settings, it reverts back to light mode as soon as I close and reopen the app. I've toggled it several times and it never stays on."
+    },
+    "ticket_b": {
+      "customerEmail": "declan.moore@gmail.com",
+      "subject": "Dark mode keeps resetting to light",
+      "message": "I enable dark mode and it looks fine while I'm using the app, but the next time I open it, it's back to light mode again. This happens consistently, every session."
+    }
+  },
+  {
+    "pair_id": 19,
+    "category": "TECHNICAL",
+    "ticket_a": {
+      "customerEmail": "dev.raghavan@startup.io",
+      "subject": "API returning 429 errors constantly",
+      "message": "We're getting rate limited (HTTP 429) on the API even though our request volume hasn't changed from last month, and we're well under the documented limits. This is blocking our integration in production."
+    },
+    "ticket_b": {
+      "customerEmail": "connor.blake@startup.io",
+      "subject": "Hitting rate limits unexpectedly on the API",
+      "message": "Our integration has started receiving 429 rate limit responses despite our call volume being steady and within the published limits for our plan. This started a couple of days ago with no changes on our end."
+    }
+  },
+  {
+    "pair_id": 20,
+    "category": "TECHNICAL",
+    "ticket_a": {
+      "customerEmail": "harriet.osei@gmail.com",
+      "subject": "Exported CSV file is corrupted",
+      "message": "When I export my order history to CSV, the file opens with garbled characters and misaligned columns in Excel. I've tried exporting a few times with the same broken result each time."
+    },
+    "ticket_b": {
+      "customerEmail": "leon.abara@gmail.com",
+      "subject": "CSV export unreadable in Excel",
+      "message": "The CSV I downloaded from my account page won't open properly, all the columns are shifted and there are strange characters throughout. I've tried it twice and get the same corrupted file both times."
+    }
+  },
+  {
+    "pair_id": 21,
+    "category": "TECHNICAL",
+    "ticket_a": {
+      "customerEmail": "ryan.oconnell@gmail.com",
+      "subject": "Push notifications stopped arriving on iOS",
+      "message": "I used to get order update notifications on my iPhone but they've stopped completely over the last week. Notifications are enabled in both the app settings and iOS settings, and I haven't changed anything."
+    },
+    "ticket_b": {
+      "customerEmail": "megan.walsh@gmail.com",
+      "subject": "No more push notifications on my iPhone",
+      "message": "I'm not receiving any push notifications from the app anymore, even though they used to work fine and are still switched on in my phone's settings. This has been going on for about a week now."
+    }
+  },
+  {
+    "pair_id": 22,
+    "category": "DELIVERY",
+    "ticket_a": {
+      "customerEmail": "dan.walsh93@outlook.com",
+      "subject": "Package not arrived - tracking shows delivered",
+      "message": "My tracking says my parcel was delivered at 2:34pm yesterday but I was home all day and nobody knocked. There's no card through the door and I've checked with my neighbours and none of them have it either. This was £94 worth of goods."
+    },
+    "ticket_b": {
+      "customerEmail": "aisha.karim@gmail.com",
+      "subject": "Tracking says delivered but nothing here",
+      "message": "According to the tracking, my order was delivered this afternoon, but there's nothing at my door and I was in all day. None of my neighbours have it either. This order was quite expensive so I'd like it looked into urgently."
+    }
+  },
+  {
+    "pair_id": 23,
+    "category": "DELIVERY",
+    "ticket_a": {
+      "customerEmail": "boris.ivanov@gmail.com",
+      "subject": "Parcel stuck in transit for over a week",
+      "message": "My order has shown 'in transit' for eight days now with no movement. The estimated delivery date has already passed twice. Can someone check what's happening with this shipment?"
+    },
+    "ticket_b": {
+      "customerEmail": "chiara.rossi@gmail.com",
+      "subject": "Order hasn't moved in tracking for days",
+      "message": "The tracking for my parcel has said 'in transit' since last week with no updates since, and it's now well past the estimated delivery window. Could you look into where it actually is?"
+    }
+  },
+  {
+    "pair_id": 24,
+    "category": "DELIVERY",
+    "ticket_a": {
+      "customerEmail": "petra.novakova@gmail.com",
+      "subject": "Received the wrong item",
+      "message": "I ordered a blue medium jacket but received a red jacket in a large size instead. The packing slip inside actually lists the correct item, so it seems like a picking error on your end. I'd like the right item sent and a return label for this one."
+    },
+    "ticket_b": {
+      "customerEmail": "mohammed.saleh@gmail.com",
+      "subject": "Wrong product showed up in my order",
+      "message": "I ordered a black backpack but a grey one arrived instead, in a different size to what I selected too. The invoice inside matches what I actually ordered, so it looks like the wrong item was picked and packed. Could you send the correct one and arrange a return for this?"
+    }
+  },
+  {
+    "pair_id": 25,
+    "category": "DELIVERY",
+    "ticket_a": {
+      "customerEmail": "sven.bergstrom@gmail.com",
+      "subject": "Need to change delivery address after dispatch",
+      "message": "I just realised I entered my old address on my order which has already shipped. Is there any way to redirect it to my current address before it arrives, or do I need to arrange collection from the old address?"
+    },
+    "ticket_b": {
+      "customerEmail": "ines.ferreira@gmail.com",
+      "subject": "Wrong address on a package that's already shipped",
+      "message": "I put an outdated address on my order and it's already marked as dispatched. Is it possible to reroute the delivery to my new address, or will I need to sort out getting it from the old one myself?"
+    }
+  },
+  {
+    "pair_id": 26,
+    "category": "DELIVERY",
+    "ticket_a": {
+      "customerEmail": "carmen.diaz@gmail.com",
+      "subject": "Item arrived damaged",
+      "message": "My order arrived today but the box was crushed on one side and the item inside is cracked and unusable. I've taken photos of the damage and the packaging. I'd like a replacement sent out please."
+    },
+    "ticket_b": {
+      "customerEmail": "louis.baptiste@gmail.com",
+      "subject": "Product damaged on arrival",
+      "message": "The parcel I received was quite battered and the item inside is broken, it looks like it wasn't packed with enough protection. I have photos of both the box and the damaged item if that helps. Could you send a replacement?"
+    }
+  },
+  {
+    "pair_id": 27,
+    "category": "DELIVERY",
+    "ticket_a": {
+      "customerEmail": "adaeze.eze@gmail.com",
+      "subject": "Missing items from my order",
+      "message": "My order was supposed to contain three items but only two arrived in the box. The packing slip lists all three so it seems one was left out during packing. Could you send the missing item or refund it?"
+    },
+    "ticket_b": {
+      "customerEmail": "felix.brandt@gmail.com",
+      "subject": "One item missing from multi-item order",
+      "message": "I received my package today but it's short one item compared to what's on the packing slip and my order confirmation. Everything else arrived fine. Could you ship the missing item or process a refund for it?"
+    }
+  },
+  {
+    "pair_id": 28,
+    "category": "DELIVERY",
+    "ticket_a": {
+      "customerEmail": "yara.haddad@gmail.com",
+      "subject": "Delivery delayed with no updates",
+      "message": "My order was due to arrive four days ago and there have been no tracking updates since it left the warehouse. I've had no communication about the delay. Can you tell me what's happening and when I might actually receive it?"
+    },
+    "ticket_b": {
+      "customerEmail": "victor.almeida@gmail.com",
+      "subject": "Order significantly overdue, no communication",
+      "message": "My delivery was estimated for last week and there's been silence on the tracking since it shipped, with no explanation sent to me. Could someone tell me the actual status and a realistic new delivery date?"
+    }
+  },
+  {
+    "pair_id": 29,
+    "category": "CANCELLATION",
+    "ticket_a": {
+      "customerEmail": "sophie.baker2@icloud.com",
+      "subject": "Want to cancel my subscription",
+      "message": "Please cancel my subscription effective immediately. I've been trying to find the cancel button on the website for 20 minutes and can't locate it anywhere. I don't want to be charged again next month. Please confirm by email once it's done."
+    },
+    "ticket_b": {
+      "customerEmail": "arjun.mehta@gmail.com",
+      "subject": "Can't find how to cancel my plan",
+      "message": "I want to cancel my subscription before the next billing date but there's no obvious option anywhere in my account settings. Could you cancel it for me and send a confirmation once it's done?"
+    }
+  },
+  {
+    "pair_id": 30,
+    "category": "CANCELLATION",
+    "ticket_a": {
+      "customerEmail": "nadia.petrov@gmail.com",
+      "subject": "Charged after already cancelling",
+      "message": "I cancelled my plan two weeks ago through the app and received a confirmation, but I was billed again this morning. Please refund this charge and confirm the subscription is properly cancelled this time."
+    },
+    "ticket_b": {
+      "customerEmail": "brendan.oleary@gmail.com",
+      "subject": "Still being charged after cancellation",
+      "message": "I cancelled a while back and got the email confirming it, yet another charge just went through today. Can you refund it and double check on your end that my subscription is actually turned off?"
+    }
+  },
+  {
+    "pair_id": 31,
+    "category": "CANCELLATION",
+    "ticket_a": {
+      "customerEmail": "elif.yildiz@gmail.com",
+      "subject": "Want to downgrade rather than cancel entirely",
+      "message": "I don't need all the features on my current plan but I don't want to cancel completely either. Is there a lower tier plan I can switch to that keeps my account active but reduces the monthly cost?"
+    },
+    "ticket_b": {
+      "customerEmail": "patrick.duffy@gmail.com",
+      "subject": "Looking to move to a cheaper plan instead of cancelling",
+      "message": "Rather than cancelling outright, I'd like to know if I can just drop down to a cheaper tier that still keeps my account and data active. What are my options for downgrading?"
+    }
+  },
+  {
+    "pair_id": 32,
+    "category": "CANCELLATION",
+    "ticket_a": {
+      "customerEmail": "monica.silva@gmail.com",
+      "subject": "Cancelled but lost access immediately",
+      "message": "I cancelled my subscription which I understood would still let me use the service until the end of the billing period, but my access was cut off right away. I paid for the full month, can this be restored until the period ends?"
+    },
+    "ticket_b": {
+      "customerEmail": "gabriel.costa@gmail.com",
+      "subject": "Access removed early after cancelling",
+      "message": "After cancelling, I expected to keep access until my paid period ran out, but I was locked out the same day instead. I already paid for the rest of the month. Can my access be reinstated until it actually expires?"
+    }
+  },
+  {
+    "pair_id": 33,
+    "category": "CANCELLATION",
+    "ticket_a": {
+      "customerEmail": "hana.suzuki@gmail.com",
+      "subject": "Free trial charged before I could cancel",
+      "message": "My free trial was supposed to end on the 15th but I was charged on the 13th, two days early. I was planning to cancel before the trial ended. Please refund the charge and cancel my account."
+    },
+    "ticket_b": {
+      "customerEmail": "liam.byrne@gmail.com",
+      "subject": "Charged early, before my trial period was up",
+      "message": "I got billed a few days before my trial was actually meant to expire, which meant I didn't get the chance to cancel in time. Can you refund this charge and cancel my subscription now?"
+    }
+  },
+  {
+    "pair_id": 34,
+    "category": "CANCELLATION",
+    "ticket_a": {
+      "customerEmail": "esther.adeyemi@gmail.com",
+      "subject": "Cancel flow keeps redirecting to offers",
+      "message": "Every time I try to cancel my subscription, the page just shows me discount offers instead of letting me actually cancel. I don't want a discount, I want to cancel. Please process my cancellation manually."
+    },
+    "ticket_b": {
+      "customerEmail": "kwame.asante@gmail.com",
+      "subject": "Can't get past the retention offers to cancel",
+      "message": "The cancellation process on the site just keeps showing me discounts and offers to stay instead of an actual cancel option. I'm not interested in the offers, I just want it cancelled. Can someone do this manually for me?"
+    }
+  },
+  {
+    "pair_id": 35,
+    "category": "GENERAL",
+    "ticket_a": {
+      "customerEmail": "rosalind.fenn@gmail.com",
+      "subject": "Frustrated with slow support response times",
+      "message": "I've been waiting five days for a reply to my last email and had to follow up twice. I understand things get busy but this is far too long for what should be a simple question. Please can someone respond properly this time?"
+    },
+    "ticket_b": {
+      "customerEmail": "damian.wolski@gmail.com",
+      "subject": "Support has been very slow to respond",
+      "message": "It's been almost a week since I first reached out and I've only gotten an automated reply so far. I've had to chase this up myself. Could someone actually look into my original question now?"
+    }
+  },
+  {
+    "pair_id": 36,
+    "category": "GENERAL",
+    "ticket_a": {
+      "customerEmail": "juliet.mensah@gmail.com",
+      "subject": "Requesting a copy of my personal data",
+      "message": "Under data protection rules I'd like to request a full export of all personal data you hold on me, including order history and account activity. Can you let me know the process and expected timeframe?"
+    },
+    "ticket_b": {
+      "customerEmail": "anders.johansson@gmail.com",
+      "subject": "GDPR data export request",
+      "message": "I'd like to formally request all the personal information associated with my account, as I understand I'm entitled to under GDPR. Could you tell me how to proceed and how long it usually takes?"
+    }
+  },
+  {
+    "pair_id": 37,
+    "category": "GENERAL",
+    "ticket_a": {
+      "customerEmail": "theodore.lang@gmail.com",
+      "subject": "Need to update the email on my account",
+      "message": "I've changed jobs and no longer have access to the email address linked to my account. I can still log in for now, so I'd like to update it to my personal email before I lose access to the old one."
+    },
+    "ticket_b": {
+      "customerEmail": "camille.dubois@gmail.com",
+      "subject": "Want to change my account's email address",
+      "message": "I'm switching my primary email soon and need to update the one tied to my account before the old inbox gets closed. I can currently still log in fine, just want to get ahead of it. How do I change it?"
+    }
+  },
+  {
+    "pair_id": 38,
+    "category": "GENERAL",
+    "ticket_a": {
+      "customerEmail": "portia.nwosu@gmail.com",
+      "subject": "Referral bonus never credited",
+      "message": "I referred a friend last month using my referral link and they signed up and made a purchase, but the referral credit never showed up in my account. Can you check why it wasn't applied?"
+    },
+    "ticket_b": {
+      "customerEmail": "hugo.lindberg@gmail.com",
+      "subject": "Missing my referral reward",
+      "message": "A friend I referred through my link joined and bought something a few weeks ago, but I still haven't seen the referral bonus in my account. Could you look into why it hasn't been credited?"
+    }
+  },
+  {
+    "pair_id": 39,
+    "category": "GENERAL",
+    "ticket_a": {
+      "customerEmail": "beatrix.novak@gmail.com",
+      "subject": "Does the app support offline mode?",
+      "message": "I travel a lot for work and often lose signal. Is there a way to use the app offline, like viewing previously loaded content or queuing actions to sync later? Couldn't find anything about this in the help centre."
+    },
+    "ticket_b": {
+      "customerEmail": "samir.chowdhury@gmail.com",
+      "subject": "Is offline access to the app possible?",
+      "message": "I'm often somewhere with no internet connection and was wondering if the app has any offline functionality, like caching data I've already viewed. I looked through the help articles but couldn't find a clear answer."
+    }
+  },
+  {
+    "pair_id": 40,
+    "category": "GENERAL",
+    "ticket_a": {
+      "customerEmail": "winifred.asuquo@gmail.com",
+      "subject": "Want to reduce marketing emails",
+      "message": "I'm getting marketing emails almost every day and would like to cut this down to just important account and order updates. I can't find a granular option in preferences, only a single unsubscribe from everything."
+    },
+    "ticket_b": {
+      "customerEmail": "elliot.mackay@gmail.com",
+      "subject": "Too many marketing emails, want to adjust preferences",
+      "message": "I'd like to stop receiving daily promotional emails but still get order and account notifications. The preferences page only seems to offer an all-or-nothing unsubscribe option. Is there a way to be more selective?"
+    }
+  }
+]

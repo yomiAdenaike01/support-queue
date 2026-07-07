@@ -16,11 +16,7 @@ class Filter:
         byte_data = json.dumps(self.embedding).encode("utf-8")
         return standard_b64encode(byte_data).decode("utf-8")
 
-    def to_qs(self) -> str:
-        from urllib.parse import urlencode
-
+    def to_dict(self) -> dict[str, str]:
         params = asdict(self)
         params["embedding"] = self._encode_embedding()
-        return urlencode(
-            {key: value for key, value in params.items() if value is not None}
-        )
+        return params

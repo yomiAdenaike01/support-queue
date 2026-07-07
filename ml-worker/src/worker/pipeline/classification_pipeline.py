@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
 from typing import TYPE_CHECKING, Optional
 
@@ -68,13 +67,18 @@ class ClassificationPipeline(Pipeline):
         related_knowledge_list = await self._knowledge_base.search(
             SearchFilter(source_type="resolved_ticket", embedding=embedding)
         )
-        return [
-            ResolvedTicketSummary(
-                **json.dumps(item.get("content") or "{}"),  # type: ignore
-                id=item.get("sourceId"),  # type: ignore
+        summaries: list["ResolvedTicketSummary"] = []
+        for item in related_knowledge_list:
+            content = item.get("content") or {}
+            summaries.append(
+                ResolvedTicketSummary(
+                    core_issue=content.get("core_issue", ""),
+                    steps_taken=content.get("steps_taken", ""),
+                    resolution=content.get("resolution", ""),
+                    id=item.get("sourceId"),
+                )
             )
-            for item in related_knowledge_list
-        ]
+        return summaries
 
     async def _get_similar_cases(
         self, ctx_ticket: "Ticket", ticket_embed_str: str

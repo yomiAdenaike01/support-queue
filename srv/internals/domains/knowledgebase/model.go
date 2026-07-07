@@ -37,5 +37,5 @@ func (s searchInput) getLimit() int {
 	return s.Limit
 }
 func (s searchInput) getOffset() int {
-	return s.getPage() * s.getLimit()
+	return (s.getPage() - 1) * s.getLimit()
 }
