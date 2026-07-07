@@ -1,4 +1,4 @@
-package ticket
+package ticketdomain
 
 import (
 	"context"
@@ -10,14 +10,32 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/yomiAdenaike01/support-queue/internals/db/queries"
+	integrationsdomain "github.com/yomiAdenaike01/support-queue/internals/domains/integrations"
 )
 
 type Repository struct {
-	db *sqlx.DB
+	db              *sqlx.DB
+	ticketIngestion chan integrationsdomain.TicketPayload
+}
+
+func (r *Repository) onNewTicket() {
+	for ticket := range r.ticketIngestion {
+		log.Println(ticket.Email(), ticket.GetSubject(), ticket.Message())
+		_, err := r.Create(context.Background(), ticket)
+		if err != nil {
+			log.Println(err.Error())
+		}
+	}
+}
+
+func (r *Repository) GetIngestionChannel() chan<- integrationsdomain.TicketPayload {
+	return r.ticketIngestion
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
-	return &Repository{db: db}
+	r := &Repository{db: db, ticketIngestion: make(chan integrationsdomain.TicketPayload)}
+	go r.onNewTicket()
+	return r
 }
 
 type PaginationInput struct {
@@ -52,6 +70,22 @@ type DbCreateTicketInput struct {
 	MessageContent string `db:"message_content"`
 }
 
+func (d DbCreateTicketInput) Email() string {
+	return d.CustomerEmail
+}
+func (d DbCreateTicketInput) GetSubject() string {
+	return d.Subject
+}
+func (d DbCreateTicketInput) Message() string {
+	return d.MessageContent
+}
+
+type ITicket interface {
+	Email() string
+	GetSubject() string
+	Message() string
+}
+
 type DbInsertMessageInput struct {
 	MessageContent string `db:"content"`
 	TicketId       string `db:"ticket_id"`
@@ -80,6 +114,15 @@ type CreateEventInput struct {
 	TicketId string
 	Status   *string         `json:"status" binding:"required"`
 	Payload  json.RawMessage `json:"payload"`
+}
+
+func (c CreateEventInput) toJSON() []byte {
+	data, err := json.Marshal(c)
+	if err != nil {
+		log.Printf("FAILED err=%s", err.Error())
+		return nil
+	}
+	return data
 }
 
 type DbEventResponse struct {
@@ -158,7 +201,7 @@ type UpdateTicketInput struct {
 func (r *Repository) FindAndUpdate(ctx context.Context, id string, update UpdateTicketInput) error {
 	res, err := r.db.ExecContext(ctx, `UPDATE tickets 
 	 SET suggested_response = COALESCE($1::TEXT,suggested_response),
-	 	sentiment_score = COALESCE($2::INT, sentiment_score),
+	 	sentiment_score = COALESCE($2::FLOAT, sentiment_score),
 		priority = COALESCE($3::TEXT, priority),
 		category = COALESCE($4::TEXT, category),
 		urgency_flag = COALESCE($5, urgency_flag),
@@ -215,9 +258,9 @@ func (r *Repository) InsertMessage(ctx context.Context, input DbInsertMessageInp
 	return ins, err
 }
 
-func (r *Repository) Create(ctx context.Context, input DbCreateTicketInput) (DbCreateTicketResult, error) {
+func (r *Repository) Create(ctx context.Context, input ITicket) (DbCreateTicketResult, error) {
 	var createdTicket DbCreateTicketResult
-	if err := r.db.Get(&createdTicket, queries.CREATE_TICKET_QUERY, input.CustomerEmail, input.Subject, input.MessageContent); err != nil {
+	if err := r.db.Get(&createdTicket, queries.CREATE_TICKET_QUERY, input.Email(), input.GetSubject(), input.Message()); err != nil {
 		return createdTicket, err
 	}
 	return createdTicket, nil

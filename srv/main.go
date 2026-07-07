@@ -9,7 +9,7 @@ import (
 	"github.com/yomiAdenaike01/support-queue/internals/config"
 	"github.com/yomiAdenaike01/support-queue/internals/infra/database"
 	redisinfra "github.com/yomiAdenaike01/support-queue/internals/infra/redis"
-	"github.com/yomiAdenaike01/support-queue/internals/server"
+	"github.com/yomiAdenaike01/support-queue/internals/web"
 )
 
 func main() {
@@ -28,11 +28,13 @@ func main() {
 	ctx, cancel := signal.NotifyContext(shutdownCtx, syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	router := server.NewRouter(server.RouterDependencies{
+	deps := web.Dependencies{
 		Context:      shutdownCtx,
 		DB:           db,
 		StreamClient: streamClient,
 		Config:       cfg,
-	})
-	server.Run(ctx, cfg, router)
+	}
+
+	router := web.New(deps)
+	web.Run(ctx, cfg, router)
 }

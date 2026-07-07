@@ -1,6 +1,6 @@
 import asyncio
 from logging import getLogger
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from ..repositories import (
@@ -21,10 +21,12 @@ logger = getLogger("[classification-queue]")
 class ClassificationQueue:
     _queue: asyncio.Queue["StreamEvent"]
     _deps: "QueueDependencies"
+    _seen: set[Any]
 
     def __init__(self, deps: "QueueDependencies"):
         self._queue = asyncio.Queue(maxsize=20)
         self._deps = deps
+        self._seen = set()
 
     def begin_workers(self, num_workers: int = 3):
         return [asyncio.create_task(self.__work(uuid4().hex))]
@@ -97,4 +99,7 @@ class ClassificationQueue:
                     continue
 
     async def add_to_queue(self, data: "StreamEvent"):
+        if data.id in self._seen:
+            return
+        self._seen.add(data.id)
         await self._queue.put(data)

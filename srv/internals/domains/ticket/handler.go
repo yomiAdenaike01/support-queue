@@ -1,4 +1,4 @@
-package ticket
+package ticketdomain
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 	integrationsdomain "github.com/yomiAdenaike01/support-queue/internals/domains/integrations"
 	teamdomain "github.com/yomiAdenaike01/support-queue/internals/domains/team"
 	redisinfra "github.com/yomiAdenaike01/support-queue/internals/infra/redis"
+	"github.com/yomiAdenaike01/support-queue/internals/web/sse"
 )
 
 type Handler struct {
@@ -23,10 +24,14 @@ type Handler struct {
 	teams        *teamdomain.Repository
 	integrations *integrationsdomain.Integrations
 	ctx          context.Context
+	sseServer    *sse.Server
 }
 
 func NewHandler(ctx context.Context, db *sqlx.DB, streamClient *redisinfra.StreamClient, repository *Repository, teams *teamdomain.Repository, integrations *integrationsdomain.Integrations) *Handler {
+	sseServer := sse.New(ctx)
+
 	return &Handler{
+		sseServer:    sseServer,
 		repository:   repository,
 		streamClient: streamClient,
 		teams:        teams,
@@ -45,6 +50,7 @@ func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
 	group.POST("/tickets/:id/reprocess", h.reprocessTicket)
 	group.PATCH("/tickets/:id", h.updateTicket)
 	group.POST("/tickets/:id/pipeline", h.rerunPipeline)
+	group.GET("/tickets/:id/events/sse", h.sseServer.Middleware())
 }
 
 type IdParam struct {
@@ -238,6 +244,7 @@ func (h *Handler) addEvent(ctx *gin.Context) {
 
 	addEventBody.TicketId = params.Id
 
+	h.sseServer.Emit(addEventBody.toJSON())
 	event, err := h.repository.CreateEvent(addEventBody)
 	if err != nil {
 		if !errors.Is(err, ErrDuplicateTicketEvent) {

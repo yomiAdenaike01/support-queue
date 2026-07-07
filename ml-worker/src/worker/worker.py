@@ -133,7 +133,7 @@ class Worker:
             if resolved_ticket_id is None:
                 break
             await self._resolution_queue.add_to_queue(evnt)
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(1)
 
     async def on_pending_tickets(self):
         logger.info(
@@ -142,12 +142,12 @@ class Worker:
         while True:
             evnt = await asyncio.to_thread(self._event_bus.listen_incomplete_tickets)
             if evnt is None:
-                break
+                continue
             resolved_ticket_id = evnt.data.get("ticket_id")
             if resolved_ticket_id is None:
-                break
+                continue
             await self._classification_queue.add_to_queue(evnt)
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(1)
 
     async def on_new_ticket(self):
         logger.info("[Application:on_new_ticket]: Waiting for ticket event...")

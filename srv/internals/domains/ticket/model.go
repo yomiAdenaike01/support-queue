@@ -1,4 +1,4 @@
-package ticket
+package ticketdomain
 
 import (
 	"database/sql"

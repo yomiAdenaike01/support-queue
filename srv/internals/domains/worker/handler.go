@@ -10,14 +10,14 @@ import (
 	"github.com/gin-gonic/gin"
 	integrationsdomain "github.com/yomiAdenaike01/support-queue/internals/domains/integrations"
 	teamdomain "github.com/yomiAdenaike01/support-queue/internals/domains/team"
-	"github.com/yomiAdenaike01/support-queue/internals/domains/ticket"
+	ticketdomain "github.com/yomiAdenaike01/support-queue/internals/domains/ticket"
 )
 
 type Handler struct {
 	context          context.Context
 	integrations     *integrationsdomain.Integrations
 	teamsRepository  *teamdomain.Repository
-	ticketRepository *ticket.Repository
+	ticketRepository *ticketdomain.Repository
 }
 
 type WorkerResult struct {
@@ -30,8 +30,8 @@ type WorkerResult struct {
 	UrgencyReason     string  `json:"urgency_reason"`
 }
 
-func workerResultToUpdateInput(workerResult WorkerResult) ticket.UpdateTicketInput {
-	return ticket.UpdateTicketInput{
+func workerResultToUpdateInput(workerResult WorkerResult) ticketdomain.UpdateTicketInput {
+	return ticketdomain.UpdateTicketInput{
 		SuggestedResponse: &workerResult.SuggestedResponse,
 		Category:          &workerResult.Category,
 		RequiresUrgency:   &workerResult.RequiresUrgency,
@@ -174,7 +174,7 @@ func fromCategoryToDepartments(category string) []string {
 	return teams
 }
 
-func NewHandler(context context.Context, integrations *integrationsdomain.Integrations, teamRepository *teamdomain.Repository, ticketRepository *ticket.Repository) *Handler {
+func NewHandler(context context.Context, integrations *integrationsdomain.Integrations, teamRepository *teamdomain.Repository, ticketRepository *ticketdomain.Repository) *Handler {
 	return &Handler{
 		context:          context,
 		integrations:     integrations,

@@ -21,15 +21,21 @@
       "program": "${workspaceFolder}/srv",
       "cwd": "${workspaceFolder}/srv",
       "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "name": "Debug agent Server",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/agents",
+      "cwd": "${workspaceFolder}/agents",
+      "envFile": "${workspaceFolder}/.env"
     }
   ],
   "compounds": [
     {
       "name": "Debug Server + ML Worker",
-      "configurations": [
-        "Debug Go Server",
-        "Debug ML Worker"
-      ],
+      "configurations": ["Debug Go Server", "Debug ML Worker"],
       "stopAll": true
     }
   ]

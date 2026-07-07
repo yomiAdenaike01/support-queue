@@ -1,4 +1,4 @@
-package server
+package web
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/yomiAdenaike01/support-queue/internals/config"
 	inputsourcesdomain "github.com/yomiAdenaike01/support-queue/internals/domains/inputsources"
 	integrationsdomain "github.com/yomiAdenaike01/support-queue/internals/domains/integrations"
+	"github.com/yomiAdenaike01/support-queue/internals/domains/integrations/oauth"
 	knowledgebasedomain "github.com/yomiAdenaike01/support-queue/internals/domains/knowledgebase"
 	metricsdomain "github.com/yomiAdenaike01/support-queue/internals/domains/metrics"
 	teamdomain "github.com/yomiAdenaike01/support-queue/internals/domains/team"
@@ -17,26 +18,35 @@ import (
 	redisinfra "github.com/yomiAdenaike01/support-queue/internals/infra/redis"
 )
 
-type RouterDependencies struct {
+type Dependencies struct {
 	Context      context.Context
 	DB           *sqlx.DB
 	StreamClient *redisinfra.StreamClient
 	Config       *config.Config
 }
 
-func NewRouter(deps RouterDependencies) *gin.Engine {
+func New(deps Dependencies) *gin.Engine {
 	g := gin.Default()
 	v1 := g.Group("/api/v1")
 
 	v1.GET("healthz", func(ctx *gin.Context) {
 		ctx.Status(http.StatusOK)
 	})
+
 	inputSourcesRepository := inputsourcesdomain.NewRepository(deps.DB)
 	inputSourcesHandler := inputsourcesdomain.NewHandler(inputSourcesRepository)
 	inputSourcesHandler.RegisterRoutes(v1.Group("/input-sources"))
-	integrations := integrationsdomain.New(deps.Config, inputSourcesRepository)
 
 	ticketRepository := ticketdomain.NewRepository(deps.DB)
+	oauthCredsRepo := oauth.NewCredentialsRepository(deps.DB)
+	oauthProviders := oauth.NewAuthProviders(deps.Config, oauthCredsRepo)
+	integrations := integrationsdomain.New(integrationsdomain.Deps{
+		Db:               deps.DB,
+		Config:           deps.Config,
+		InputSourcesRepo: inputSourcesRepository,
+		IngestionChanel:  ticketRepository.GetIngestionChannel(),
+		Providers:        oauthProviders,
+	})
 
 	teamRepository := teamdomain.NewRepository(deps.DB)
 	teamHandler := teamdomain.NewHandler(teamdomain.NewService(teamRepository, integrations), integrations, teamRepository)
@@ -50,7 +60,7 @@ func NewRouter(deps RouterDependencies) *gin.Engine {
 	workerHandler := workerdomain.NewHandler(deps.Context, integrations, teamRepository, ticketRepository)
 	workerHandler.RegisterRoutes(v1.Group("/worker"))
 
-	integrationsHandler := integrationsdomain.NewHandler(integrations)
+	integrationsHandler := integrationsdomain.NewHandler(deps.Config, integrations, oauthProviders)
 	integrationsHandler.RegisterRoutes(v1.Group("/integrations"))
 
 	knowledgeBaseRepository := knowledgebasedomain.NewRepository(deps.DB)

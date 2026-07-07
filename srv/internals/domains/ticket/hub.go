@@ -1,4 +1,4 @@
-package ticket
+package ticketdomain
 
 type Hub struct {
 	In  chan<- string

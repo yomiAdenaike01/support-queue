@@ -13,7 +13,7 @@ type Service struct {
 
 func (h *Service) FindTeams(ctx context.Context, filters *Filters) ([]TeamResponse, error) {
 	if filters == nil {
-		filters = &Filters{}
+		filters = new(Filters)
 	}
 	return h.repository.Find(ctx, *filters)
 }

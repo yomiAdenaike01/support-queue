@@ -1,27 +1,40 @@
 package integrationsdomain
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/yomiAdenaike01/support-queue/internals/config"
+	"github.com/yomiAdenaike01/support-queue/internals/domains/integrations/oauth"
 )
 
 type Handler struct {
-	integrations *Integrations
-	config       *config.Config
+	integrations   *Integrations
+	config         *config.Config
+	oauthProviders *oauth.Providers
 }
 
 func (h *Handler) handleInitOauth(ctx *gin.Context) {
-	platform := ctx.Query("platform")
-	callbackUrl := fmt.Sprintf("%s?platform=%s", h.config.GetEnvOrFail("OAUTH_CALLBACK_URL"), platform)
-	url := fmt.Sprintf("https://slack.com?response_type=code&scope=openid,profile,mail&client_id=%s&redirect_uri=%sstate=RANDOM_SECURITY_STRING", h.config.GetEnvOrFail("SLACK_CLIENT_ID"), callbackUrl)
-	ctx.Redirect(http.StatusTemporaryRedirect, url)
+	provider := oauth.ProviderName(ctx.Query("provider"))
+	ctx.Redirect(http.StatusTemporaryRedirect, h.oauthProviders.GetAuthorisationEndpoint(provider))
 }
 
 func (h *Handler) handleCallback(ctx *gin.Context) {
-	ctx.Status(200)
+	var callbackQueryParams oauth.Callback
+	if err := ctx.ShouldBindQuery(&callbackQueryParams); err != nil {
+		ctx.Status(http.StatusBadRequest)
+		return
+	}
+	go func() {
+		err := h.oauthProviders.ExchangeAndSaveTokens(callbackQueryParams.Provider, callbackQueryParams.Code)
+		if err != nil {
+			log.Println("Failed to save tokens")
+		}
+	}()
+
+	ctx.Status(http.StatusOK)
+
 }
 
 func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
@@ -29,8 +42,10 @@ func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
 	group.GET("/oauth/callback", h.handleCallback)
 }
 
-func NewHandler(integrations *Integrations) *Handler {
+func NewHandler(config *config.Config, integrations *Integrations, oauthProviders *oauth.Providers) *Handler {
 	return &Handler{
-		integrations: integrations,
+		config:         config,
+		oauthProviders: oauthProviders,
+		integrations:   integrations,
 	}
 }

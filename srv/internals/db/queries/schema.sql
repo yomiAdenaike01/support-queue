@@ -179,3 +179,16 @@ CREATE TABLE IF NOT EXISTS input_sources (
 ALTER TABLE input_sources ADD COLUMN IF NOT EXISTS name TEXT NOT NULL DEFAULT '';
 ALTER TABLE tickets ADD COLUMN IF NOT EXISTS input_source_pk INT DEFAULT NULL REFERENCES input_sources(pk) ON DELETE CASCADE;
 CREATE INDEX IF NOT EXISTS idx_source_type ON input_sources(source_type);
+
+CREATE TABLE IF NOT EXISTS auth_credentials(
+    pk SERIAL PRIMARY KEY NOT NULL,
+    id UUID NOT NULL UNIQUE DEFAULT uuid_generate_v4(),
+    provider VARCHAR(255) NOT NULL,
+    access_token TEXT UNIQUE NOT NULL,
+    refresh_token TEXT UNIQUE NOT NULL,
+    access_expires_at TIMESTAMPTZ NOT NULL,
+    refresh_expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_provider ON auth_credentials(provider);

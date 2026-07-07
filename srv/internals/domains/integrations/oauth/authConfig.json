@@ -1,0 +1,16 @@
+{
+    "slack": {
+        "name": "slack",
+        "wellKnownEndpoint": "https://slack.com/.well-known/openid-configuration",
+        "scopes": "SLACK_SCOPES",
+        "clientId": "SLACK_CLIENT_ID",
+        "clientSecret": "SLACK_CLIENT_SECRET"
+    },
+    "google": {
+        "name": "google",
+        "wellKnownEndpoint": "https://accounts.google.com/.well-known/openid-configuration",
+        "scopes": "GOOGLE_SCOPES",
+        "clientId": "GOOGLE_CLIENT_ID",
+        "clientSecret": "GOOGLE_CLIENT_SECRET"
+    }
+}

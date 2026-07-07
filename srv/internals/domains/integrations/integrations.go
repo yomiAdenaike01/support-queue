@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/yomiAdenaike01/support-queue/internals/config"
 	inputsourcesdomain "github.com/yomiAdenaike01/support-queue/internals/domains/inputsources"
+	"github.com/yomiAdenaike01/support-queue/internals/domains/integrations/oauth"
 )
 
 type Platform string
@@ -15,9 +17,10 @@ const (
 )
 
 type Integrations struct {
-	Notifications    *Notifications
-	inputSourcesRepo inputsourcesdomain.Repository
-	imapClient       *ImapClient
+	Notifications       *Notifications
+	inputSourcesRepo    inputsourcesdomain.Repository
+	gmailClient         *GmailClient
+	authIntegrationRepo oauth.AuthRepository
 }
 
 type Notifications struct {
@@ -39,15 +42,31 @@ func (n *Notifications) SendNotification(ctx context.Context, input Notification
 
 }
 
-func New(config *config.Config, inputSourcesRepo inputsourcesdomain.Repository) *Integrations {
+type Deps struct {
+	Db               *sqlx.DB
+	Config           *config.Config
+	InputSourcesRepo inputsourcesdomain.Repository
+	IngestionChanel  chan<- TicketPayload
+	Providers        *oauth.Providers
+}
+
+func New(deps Deps) *Integrations {
 	notifications := &Notifications{
-		config: config,
+		config: deps.Config,
+	}
+	authIntegrationRepo := oauth.NewCredentialsRepository(deps.Db)
+
+	emailIntegrationDep := emailIntegrationDeps{
+		repository:     deps.InputSourcesRepo,
+		onNewEmail:     deps.IngestionChanel,
+		oauthProviders: deps.Providers,
 	}
 
 	integrations := &Integrations{
-		inputSourcesRepo: inputSourcesRepo,
-		Notifications:    notifications,
-		imapClient:       newImapClient(context.TODO(), inputSourcesRepo, make(chan any)),
+		inputSourcesRepo:    deps.InputSourcesRepo,
+		Notifications:       notifications,
+		authIntegrationRepo: authIntegrationRepo,
+		gmailClient:         newGmailClient(context.TODO(), emailIntegrationDep),
 	}
 	return integrations
 }
